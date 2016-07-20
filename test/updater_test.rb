@@ -29,6 +29,18 @@ module Autoproj::Jenkins
                 pipeline = config.elements['//definition[@plugin = "workflow-cps@2.9"]/script'].text
                 assert_match Regexp.new("git url: 'https://github.com/rock-core/buildconf', branch: 'master'"), pipeline
             end
+            it "raises if the job already exists" do
+                updater = Updater.new(ws, jenkins_connect, job_prefix: TestHelper::TEST_JOB_PREFIX)
+                updater.create_buildconf_job
+                assert_raises(JenkinsApi::Exceptions::JobAlreadyExists) do
+                    updater.create_buildconf_job
+                end
+            end
+            it "overwrites an existing job if force is set" do
+                updater = Updater.new(ws, jenkins_connect, job_prefix: TestHelper::TEST_JOB_PREFIX)
+                updater.create_buildconf_job
+                updater.create_buildconf_job(force: true)
+            end
             it "checks out the buildconf, installs autoproj and installs all osdeps" do
                 updater = Updater.new(ws, jenkins_connect, job_prefix: TestHelper::TEST_JOB_PREFIX)
                 updater.create_buildconf_job

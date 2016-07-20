@@ -33,7 +33,10 @@ module Autoproj::Jenkins
         # Create the master buildconf job
         #
         # @return [void]
-        def create_buildconf_job
+        def create_buildconf_job(force: false)
+            if force
+                server.delete_job("#{job_prefix}buildconf")
+            end
             server.create_job("#{job_prefix}buildconf", 'buildconf.xml',
                 vcs: ws.manifest.vcs)
         end

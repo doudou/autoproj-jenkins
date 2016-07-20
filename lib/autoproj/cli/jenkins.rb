@@ -13,9 +13,9 @@ module Autoproj
                 @updater = Autoproj::Jenkins::Updater.new(ws, server)
             end
 
-            def create_buildconf_job
+            def create_buildconf_job(force: false)
                 initialize_and_load
-                updater.create_buildconf_job
+                updater.create_buildconf_job(force: force)
             end
         end
     end

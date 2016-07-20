@@ -20,6 +20,13 @@ module Autoproj::Jenkins
             xml = Autoproj::Jenkins.render_template(template, **parameters)
             JenkinsApi::Client::Job.new(client).create(job_name, xml)
         end
+
+        # Delete a job
+        #
+        # @param [String] job_name
+        def delete_job(job_name)
+            JenkinsApi::Client::Job.new(client).delete(job_name)
+        end
     end
 end
 
