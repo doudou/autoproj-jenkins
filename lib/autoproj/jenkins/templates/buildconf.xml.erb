@@ -7,23 +7,7 @@
     <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.9">
         <script>
 node {
-    stage 'prepare'
-    env.HOME = pwd()
-    sh 'wget -O autoproj_install https://raw.githubusercontent.com/rock-core/autoproj/master/bin/autoproj_install'
-    def gemfile = "<%= read_and_escape_file 'buildconf-Gemfile' %>"
-    writeFile file: 'Gemfile', text: gemfile
-    def config = "<%= read_and_escape_file 'buildconf-config.yml' %>"
-    writeFile file: 'seed.yml', text: config
-    dir('dev') {
-        stage 'autoproj install'
-        sh "ruby ../autoproj_install --seed-config=../seed.yml --private --gemfile=../Gemfile"
-        stage 'buildconf checkout'
-        dir('autoproj') {
-            <%= vcs.type %> <%= Hash[url: vcs.url].merge(vcs.options).map { |k, v| "#{k}: '#{v}'" }.join(", ") %>
-        }
-        sh ".autoproj/autoproj/bin/aup autoproj"
-    }
-
+    <%= render_template('bootstrap.pipeline', vcs: vcs) %>
     sh 'tar cjf buildconf-dev.tar.bz2 dev --exclude=dev/autoproj/remotes --exclude=dev/install --exclude=dev/env.sh'
     archive 'buildconf-dev.tar.bz2'
 }
