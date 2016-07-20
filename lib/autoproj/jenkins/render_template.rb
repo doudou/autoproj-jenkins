@@ -9,7 +9,8 @@ module Autoproj::Jenkins
     # It ensures that the templates are restricted to use the parameters that
     # are provided to them
     class TemplateRenderingContext < BasicObject
-        def initialize(**parameters)
+        def initialize(template_path, **parameters)
+            @template_path = template_path
             @parameters = parameters
             @used_parameters = ::Set.new
         end
@@ -20,6 +21,12 @@ module Autoproj::Jenkins
             if !unused_parameters.empty?
                 ::Kernel.raise ::Autoproj::Jenkins::UnusedTemplateParameters, "#{unused_parameters.size} unused parameters: #{unused_parameters.map(&:to_s).sort.join(", ")}"
             end
+        end
+
+        def render_template(path, **parameters)
+            result = ::Autoproj::Jenkins.render_template(path, template_path: @template_path, **parameters)
+            @used_parameters.merge(parameters.keys)
+            result
         end
 
         def read_and_escape_file(path)
@@ -52,7 +59,7 @@ module Autoproj::Jenkins
     # @param [Pathname] template_path where the templates are located on disk
     # @return [String]
     def self.render_template(template_name, template_path: self.template_path, **parameters)
-        context = TemplateRenderingContext.new(**parameters)
+        context = TemplateRenderingContext.new(template_path, **parameters)
         template_path = template_path + "#{template_name}.erb"
         template = ERB.new(template_path.read)
         template.filename = template_path.to_s

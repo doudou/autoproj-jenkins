@@ -12,6 +12,11 @@ module Autoproj::Jenkins
                 'with_parameters.xml', template_path: self.template_path, parameter: 10)
             assert_equal "<result>10</result>\n", result
         end
+        it "recursively resolves templates, passing them the parameters and template path" do
+            result = Autoproj::Jenkins.render_template(
+                'recursive.xml', template_path: self.template_path, parameter: 10)
+            assert_equal "<result>10</result>\n\n", result
+        end
         it "raises if the template accesses parameters that are not available" do
             assert_raises(UnknownTemplateParameter) do
                 Autoproj::Jenkins.render_template(
