@@ -22,6 +22,11 @@ module Autoproj::Jenkins
             end
         end
 
+        def read_and_escape_file(path)
+            (::Autoproj::Jenkins.template_path + path).read.
+                gsub("\n", "\\n").
+                gsub("\"", "\\\"")
+        end
 
         def method_missing(m)
             if @parameters.has_key?(m)

@@ -1,6 +1,9 @@
 module Autoproj::Jenkins
     # The interface to a Jenkins server
     class Server
+        # The underlying client
+        #
+        # @return [JenkinsApi::Client::Job]
         attr_reader :client
 
         def initialize(**options)

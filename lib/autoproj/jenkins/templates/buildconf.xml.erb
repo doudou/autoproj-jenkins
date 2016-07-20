@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job@2.3">
+    <actions/>
+    <description></description>
+    <keepDependencies>false</keepDependencies>
+    <properties/>
+    <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.9">
+        <script>
+            node {
+                env.HOME = pwd()
+                sh 'wget -O autoproj_install https://raw.githubusercontent.com/rock-core/autoproj/master/bin/autoproj_install'
+                def gemfile = "<%= read_and_escape_file 'buildconf-Gemfile' %>"
+                writeFile file: 'Gemfile', text: gemfile
+                def config = "<%= read_and_escape_file 'buildconf-config.yml' %>"
+                writeFile file: 'seed.yml', text: config
+                dir('dev') {
+                    sh "ruby ../autoproj_install --seed-config=../seed.yml --private --gemfile=../Gemfile"
+                    dir('autoproj') {
+                        <%= vcs.type %> <%= Hash[url: vcs.url].merge(vcs.options).map { |k, v| "#{k}: '#{v}'" }.join(", ") %>
+                    }
+                    sh ".autoproj/autoproj/bin/aup autoproj"
+                }
+                archive '**/*'
+            }
+        </script>
+        <sandbox>true</sandbox>
+    </definition>
+    <triggers/>
+</flow-definition>
+
+
