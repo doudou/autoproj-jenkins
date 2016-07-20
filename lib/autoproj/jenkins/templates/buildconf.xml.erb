@@ -23,7 +23,9 @@ node {
         }
         sh ".autoproj/autoproj/bin/aup autoproj"
     }
-    archive '**/*'
+
+    sh 'tar cjf buildconf-dev.tar.bz2 dev --exclude=dev/autoproj/remotes --exclude=dev/install --exclude=dev/env.sh'
+    archive 'buildconf-dev.tar.bz2'
 }
         </script>
         <sandbox>true</sandbox>
