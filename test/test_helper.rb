@@ -41,6 +41,11 @@ module Autoproj::Jenkins
         end
 
         def teardown
+            if server
+                jenkins_test_jobs.each do |job_name|
+                    jenkins_delete_job job_name
+                end
+            end
             super
         end
 
@@ -54,6 +59,11 @@ module Autoproj::Jenkins
         end
 
         TEST_JOB_PREFIX = "autoproj-jenkins-test-"
+
+        def jenkins_test_jobs
+            jenkins_jobs.list(/^#{TEST_JOB_PREFIX}/).
+                map { |job_name| job_name[TEST_JOB_PREFIX.size..-1] }
+        end
 
         # Delete a job 
         def jenkins_delete_job(job_name)
@@ -95,27 +105,43 @@ module Autoproj::Jenkins
 
         attr_writer :jenkins_run_progress
 
-        def jenkins_run_job(job_name, progress: jenkins_run_progress?)
-            job_name = TEST_JOB_PREFIX + job_name
-            build_id = jenkins_jobs.build(job_name)
+        def jenkins_run_job(job_name, progress: jenkins_run_progress?, start_timeout: 30, timeout: Float::INFINITY)
+            jenkins_start_job(job_name)
+            jenkins_join_job(job_name, progress: progress, start_timeout: start_timeout, timeout: timeout)
+        end
+
+        def jenkins_start_job(job_name)
+            prefixed_job_name = TEST_JOB_PREFIX + job_name
+            jenkins_jobs.build(prefixed_job_name)
+        end
+
+        def jenkins_join_job(job_name, progress: jenkins_run_progress?, start_timeout: 30, timeout: Float::INFINITY)
+            prefixed_job_name = TEST_JOB_PREFIX + job_name
             console_start = 0
 
+            start = Time.now
             while true
-                status = jenkins_jobs.status(job_name)
-
-                if status == 'running' && jenkins_run_progress?
-                    puts "START #{console_start}"
-                    response = jenkins_read_console(job_name, 0, console_start)
-                    console_start += response['size']
-                    puts response['output']
+                if Time.now - start > timeout
+                    flunk("#{job_name} timed out: did not finish within #{timeout} seconds")
                 end
+                status = jenkins_jobs.status(prefixed_job_name)
 
-                if status != 'running' && status != 'not_run'
+                if status == 'running'
+                    if jenkins_run_progress?
+                        response = jenkins_read_console(job_name, 0, console_start)
+                        console_start += response['size']
+                        puts response['output']
+                    end
+                elsif status == 'not_run'
+                    if (Time.now - start > start_timeout)
+                        flunk("#{job_name} timed out: did not start within #{start_timeout} seconds")
+                    end
+                else
                     if status == 'success'
                         return
                     else
                         output = jenkins_console_output(job_name)
-                        flunk("job #{job_name} exited with status #{status}: #{output}")
+                        flunk("job #{prefixed_job_name} exited with status #{status}: #{output}")
                     end
                 end
                 sleep 0.1

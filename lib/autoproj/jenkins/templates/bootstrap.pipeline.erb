@@ -1,4 +1,4 @@
-stage 'prepare'
+stage 'bootstrap-install'
 env.HOME = pwd()
 sh 'wget -O autoproj_install https://raw.githubusercontent.com/rock-core/autoproj/master/bin/autoproj_install'
 def gemfile = "<%= read_and_escape_file 'buildconf-Gemfile' %>"
@@ -6,12 +6,11 @@ writeFile file: 'Gemfile', text: gemfile
 def config = "<%= read_and_escape_file 'buildconf-config.yml' %>"
 writeFile file: 'seed.yml', text: config
 dir('dev') {
-    stage 'autoproj install'
-    sh "ruby ../autoproj_install --seed-config=../seed.yml --private --gemfile=../Gemfile"
-    stage 'buildconf checkout'
+    sh "ruby ../autoproj_install --seed-config=../seed.yml --gems-path=/var/lib/jenkins/cache/gems --gemfile=../Gemfile"
+    stage 'bootstrap-buildconf'
     dir('autoproj') {
         <%= vcs.type %> <%= Hash[url: vcs.url].merge(vcs.options).map { |k, v| "#{k}: '#{v}'" }.join(", ") %>
     }
-    sh ".autoproj/autoproj/bin/aup autoproj"
+    sh ".autoproj/bin/aup autoproj"
 }
 
