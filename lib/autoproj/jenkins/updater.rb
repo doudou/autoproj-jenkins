@@ -52,13 +52,13 @@ module Autoproj::Jenkins
         # Create a job for a package
         #
         # @return [void]
-        def create_package_job(package, job_name: job_name_from_package_name(package.name), force: false)
+        def create_package_job(package, job_name: job_name_from_package_name(package.name), force: false, quiet_period: 5)
             job_name = job_name_from_package_name(package.name)
             if force
                 server.delete_job(job_name)
             end
 
-            server.create_job(job_name, 'package.xml')
+            server.create_job(job_name, 'package.xml', quiet_period: quiet_period)
         end
 
         # Resolve a package by its name
@@ -70,13 +70,13 @@ module Autoproj::Jenkins
         end
 
         # Create jobs and dependencies to handle the given set of packages
-        def update(*packages)
+        def update(*packages, quiet_period: 5)
             reverse_dependencies = ws.manifest.compute_revdeps
 
             packages.each do |package|
                 job_name = job_name_from_package_name(package.name)
                 if !server.has_job?(job_name)
-                    create_package_job(package, job_name: job_name)
+                    create_package_job(package, job_name: job_name, quiet_period: quiet_period)
                 end
             end
 

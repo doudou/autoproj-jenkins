@@ -68,13 +68,13 @@ module Autoproj::Jenkins
 
             it "creates a job that runs successfully" do
                 updater = Updater.new(ws, jenkins_connect, job_prefix: TestHelper::TEST_JOB_PREFIX)
-                updater.update(base_cmake)
+                updater.update(base_cmake, quiet_period: 0)
                 jenkins_run_job 'base-cmake'
             end
 
             it "handles dependencies between packages" do
                 updater = Updater.new(ws, jenkins_connect, job_prefix: TestHelper::TEST_JOB_PREFIX)
-                updater.update(base_cmake, base_logging)
+                updater.update(base_cmake, base_logging, quiet_period: 0)
                 jenkins_start_job 'base-cmake'
                 jenkins_join_job 'base-cmake'
                 jenkins_join_job 'base-logging'
@@ -82,7 +82,7 @@ module Autoproj::Jenkins
 
             it "waits for upstream jobs to finish" do
                 updater = Updater.new(ws, jenkins_connect, job_prefix: TestHelper::TEST_JOB_PREFIX)
-                updater.update(base_cmake, base_logging)
+                updater.update(base_cmake, base_logging, quiet_period: 0)
                 jenkins_start_job 'base-cmake'
                 # The 'base-logging' job would fail without synchronization
                 # because it relies on the existence of artifacts that are not
