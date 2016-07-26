@@ -1,0 +1,4 @@
+dir('<%= package_dir %>') {
+    <%= vcs.type %> <%= Hash[url: vcs.url].merge(vcs.options).map { |k, v| "#{k}: '#{v}'" }.join(", ") %>
+}
+

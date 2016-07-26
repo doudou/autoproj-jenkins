@@ -18,20 +18,17 @@ waitUntil {
 node {
     stage 'bootstrap'
     <%= render_template('bootstrap.pipeline', vcs: buildconf_vcs) %>
-    stage 'build-dependencies'
+    stage 'install upstream artifacts'
     <%= render_template('handle-upstream.pipeline', upstream_jobs: upstream_jobs) %>
 
     dir('dev') {
-        stage 'build-prepare'
-        dir('<%= package_dir %>') {
-            <%= vcs.type %> <%= Hash[url: vcs.url].merge(vcs.options).map { |k, v| "#{k}: '#{v}'" }.join(", ") %>
-        }
-        
+        stage 'prepare build'
+        <%= render_template("import-#{vcs.type}.pipeline", package_dir: package_dir, vcs: vcs) %>
         def autoproj = ".autoproj/bin/autoproj"
-        sh "${autoproj} osdeps '<%= package_name %>'"
+        sh "${autoproj} osdeps '<%= package_name %>' 'pkg-config'"
 
         stage 'build'
-        sh "${autoproj} build --force --deps=f '<%= package_name %>'"
+        sh "${autoproj} build --verbose --force --deps=f '<%= package_name %>'"
     }
 
     stage 'trigger dependencies'
@@ -39,6 +36,4 @@ node {
                         job_name: job_name,
                         artifact_glob: artifact_glob,
                         downstream_jobs: downstream_jobs) %>
-
-
 }

@@ -88,6 +88,10 @@ module Autoproj::Jenkins
 
                 downstream_jobs = (reverse_dependencies[package.name] & package_names).
                     map { |pkg_name| job_name_from_package_name(pkg_name) }
+                if !Autoproj::Jenkins.has_template?("import-#{package.vcs.type}.pipeline")
+                    raise UnhandledVCS, "the #{package.vcs.type} importer, used by #{package.name}, is not supported by autoproj-jenkins"
+                end
+
                 server.update_job_pipeline(job_name, 'package.pipeline',
                     buildconf_vcs: ws.manifest.vcs,
                     vcs: package.vcs,

@@ -51,6 +51,11 @@ module Autoproj::Jenkins
         Pathname.new(__dir__) + "templates"
     end
 
+    # Test if a template with the given basename exists
+    def self.has_template?(template_name)
+        (template_path + "#{template_name}.erb").exist?
+    end
+
     # Create a template rendering context for the given parameters
     #
     # @param [String] template_name the name of the template to be rendered,
