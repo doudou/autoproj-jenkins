@@ -1,0 +1,5 @@
+zip zipFile: 'artifacts/<%= job_name %>-prefix.zip', archive: true, glob: "<%= artifact_glob %>"
+<% downstream_jobs.each do |job_name| %>
+build job: "<%= job_name %>", wait: false
+<% end %>
+

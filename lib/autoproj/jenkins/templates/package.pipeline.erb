@@ -16,23 +16,10 @@ waitUntil {
 }
 
 node {
+    stage 'bootstrap'
     <%= render_template('bootstrap.pipeline', vcs: buildconf_vcs) %>
-
     stage 'build-dependencies'
-    dir('artifacts') {
-        deleteDir()
-    }
-    dir('artifacts') {
-    }
-
-    <% upstream_jobs.each do |job_name| %>
-    step ([$class: 'CopyArtifact',
-        projectName: '<%= job_name %>',
-        filter: 'artifacts/<%= job_name%>-prefix.zip'])
-    <% end %>
-    <% upstream_jobs.each do |job_name| %>
-    unzip zipFile: 'artifacts/<%= job_name %>-prefix.zip'
-    <% end %>
+    <%= render_template('handle-upstream.pipeline', upstream_jobs: upstream_jobs) %>
 
     dir('dev') {
         stage 'build-prepare'
@@ -48,10 +35,10 @@ node {
     }
 
     stage 'trigger dependencies'
+    <%= render_template('handle-downstream.pipeline',
+                        job_name: job_name,
+                        artifact_glob: artifact_glob,
+                        downstream_jobs: downstream_jobs) %>
 
-    zip zipFile: 'artifacts/<%= job_name %>-prefix.zip', archive: true, glob: 'dev/install/<%= package_name %>/**/*'
 
-    <% downstream_jobs.each do |job_name| %>
-    build job: "<%= job_name %>", wait: false
-    <% end %>
 }
