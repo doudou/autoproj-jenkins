@@ -1,0 +1,16 @@
+waitUntil {
+    def upstream_jobs = [<%= upstream_jobs.map { |job_name| "'#{job_name}'" }.join(", ") %>]
+
+    // Iterate list -- NOTE: we cannot use groovy style or even modern java style iteration
+    def all_ready = true
+    for (int i = 0; all_ready && (i < upstream_jobs.size()); i++) {
+        def job = Jenkins.instance.getItem(upstream_jobs[i])
+        if (!job) {
+            error("cannot find upstream job ${upstream_jobs[i]}")
+        }
+
+        all_ready = all_ready && (!job.isInQueue() && !job.isBuilding())
+    }
+    return all_ready
+}
+

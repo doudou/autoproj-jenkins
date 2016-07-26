@@ -75,9 +75,11 @@ module Autoproj::Jenkins
             it "raises if the package VCS is not supported" do
                 base_cmake.vcs = Autoproj::VCSDefinition.from_raw(type: :unknown, url: '/test/')
                 updater = Updater.new(ws, jenkins_connect, job_prefix: TestHelper::TEST_JOB_PREFIX)
-                assert_raises(UnhandledVCS) do
+                e = assert_raises(UnhandledVCS) do
                     updater.update(base_cmake)
                 end
+                assert_equal 'the unknown importer, used by base/cmake, is not supported by autoproj-jenkins',
+                    e.message
                 refute jenkins_has_job?('base/cmake')
             end
 
