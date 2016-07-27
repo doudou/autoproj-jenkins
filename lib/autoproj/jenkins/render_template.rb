@@ -79,7 +79,6 @@ module Autoproj::Jenkins
         template_path = template_path + "#{template_name}.erb"
         template = ERB.new(template_path.read)
         template.filename = template_path.to_s
-        template.lineno = 0
         b = context.instance_eval { Kernel.binding }
         result = template.result(b)
         context.__verify
