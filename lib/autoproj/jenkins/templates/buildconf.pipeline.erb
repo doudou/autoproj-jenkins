@@ -1,6 +1,8 @@
 node {
-    <%= render_template('bootstrap.pipeline', vcs: vcs, gemfile: 'buildconf-Gemfile') %>
+    <%= render_template('bootstrap.pipeline', vcs: vcs, gemfile: gemfile) %>
     def autoproj = "${pwd()}/dev/.autoproj/bin/autoproj"
-    sh "${autoproj} jenkins update --trigger '${env.JENKINS_URL}' <%= packages.map { |pkg| "'#{pkg.name}'" }.join(" ") %>"
+    dir('dev') {
+        sh "${autoproj} jenkins update '${env.JENKINS_URL}' <%= packages.map { |pkg| "'#{pkg.name}'" }.join(" ") %><%= " '--job-prefix=#{job_prefix}'" if !job_prefix.empty? %> --trigger --debug"
+    }
 }
 

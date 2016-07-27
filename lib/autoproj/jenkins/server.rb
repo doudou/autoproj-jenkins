@@ -57,6 +57,11 @@ module Autoproj::Jenkins
             jobs.delete(job_name)
         end
 
+        # Trigger a job
+        def trigger_job(job_name)
+            jobs.build(job_name)
+        end
+
         # Update the pipeline of the given job
         def update_job_pipeline(job_name, template, **parameters)
             config = read_job_config(job_name)

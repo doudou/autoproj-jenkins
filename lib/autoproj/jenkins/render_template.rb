@@ -26,14 +26,22 @@ module Autoproj::Jenkins
             end
         end
 
-        def render_template(path, **parameters)
+        def render_template(path, escape: false, **parameters)
             result = ::Autoproj::Jenkins.render_template(path, template_path: @template_path, **parameters)
             @used_parameters.merge(parameters.keys)
-            result
+            if escape
+                escape_to_groovy(result)
+            else result
+            end
         end
 
         def read_and_escape_file(path)
-            (::Autoproj::Jenkins.template_path + path).read.
+            file_data = (::Autoproj::Jenkins.template_path + path).read
+            escape_to_groovy(file_data)
+        end
+
+        def escape_to_groovy(content)
+            content.
                 gsub("\n", "\\n").
                 gsub("\"", "\\\"")
         end

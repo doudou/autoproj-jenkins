@@ -16,7 +16,6 @@ module Autoproj::Jenkins
         # @return [String]
         attr_reader :job_prefix
 
-
         # Create a new updater context for an autoproj workspace and Jenkins
         # server
         #
@@ -44,21 +43,34 @@ module Autoproj::Jenkins
         #
         # @param [String] jenkins_url the URL of the jenkins server from the
         #   point of view of the job's execution
-        # @param [Array<String>] package_names if non-empty, restrict the build
-        #   to these package(s) and their dependencies
-        def update_buildconf_pipeline(*packages)
+        # @param [String] gemfile the gemfile template that should be used for
+        #   the autoproj bootstrap. Mostly used for autoproj-jenkins development
+        #   within VMs
+        # @param [Array<Autoproj::PackageDefinition>] packages if non-empty,
+        #   restrict operations to these packages and their dependencies
+        def update_buildconf_pipeline(*packages, gemfile: 'buildconf-Gemfile')
             server.update_job_pipeline("#{job_prefix}buildconf", 'buildconf.pipeline',
                 vcs: ws.manifest.vcs,
-                packages: packages)
+                packages: packages,
+                gemfile: gemfile,
+                job_prefix: job_prefix)
         end
 
         # Create or update the buildconf (master) job
-        def create_or_update_buildconf_job(*package_names, quiet_period: 5)
+        #
+        # @param [Array<Autoproj::PackageDefinition>] packages if non-empty,
+        #   restrict operations to these packages and their dependencies
+        # @param [String] gemfile the gemfile template that should be used for
+        #   the autoproj bootstrap. Mostly used for autoproj-jenkins development
+        #   within VMs
+        # @param [Integer] quiet_period the job's quiet period, in seconds.
+        #   Mostly used within autoproj-jenkins tests
+        def create_or_update_buildconf_job(*packages, gemfile: 'buildconf-Gemfile', quiet_period: 5)
             job_name = "#{job_prefix}buildconf"
             if !server.has_job?(job_name)
                 create_buildconf_job(quiet_period: quiet_period)
             end
-            update_buildconf_pipeline(*package_names)
+            update_buildconf_pipeline(*packages, gemfile: gemfile)
         end
 
         # Returns the job name of a given package

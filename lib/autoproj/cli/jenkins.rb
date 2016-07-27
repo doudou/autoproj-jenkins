@@ -7,15 +7,19 @@ module Autoproj
             attr_reader :server
             attr_reader :updater
 
-            def initialize(ws, **options)
+            def initialize(ws, job_prefix: '', **options)
                 super(ws)
                 @server = Autoproj::Jenkins::Server.new(**options)
-                @updater = Autoproj::Jenkins::Updater.new(ws, server)
+                @updater = Autoproj::Jenkins::Updater.new(ws, server, job_prefix: job_prefix)
             end
 
-            def create_buildconf_job(force: false)
+            def create_or_update_buildconf_job(*package_names, gemfile: 'buildconf-Gemfile', force: false)
                 initialize_and_load
-                updater.create_buildconf_job(force: force)
+                source_packages, _ = finalize_setup(package_names, ignore_non_imported_packages: false)
+                source_packages = source_packages.map do |package_name|
+                    ws.manifest.package(package_name)
+                end
+                updater.create_or_update_buildconf_job(*source_packages, gemfile: gemfile)
             end
 
             def add_or_update_packages(*package_names)
@@ -24,7 +28,23 @@ module Autoproj
                 source_packages = source_packages.map do |package_name|
                     ws.manifest.package(package_name)
                 end
-                updater.update(*source_packages)
+                updater.update(*source_packages).map(&:name)
+            end
+
+            def trigger_packages(*package_names)
+                package_names = package_names.to_set
+                root_packages = package_names.find_all do |pkg_name|
+                    pkg = ws.manifest.find_autobuild_package(pkg_name)
+                    if !pkg
+                        raise ArgumentError, "#{pkg_name} is not a known package"
+                    end
+                    pkg.dependencies.all? do |dep_name|
+                        !package_names.include?(dep_name)
+                    end
+                end
+                root_packages.each do |pkg_name|
+                    server.trigger_job(updater.job_name_from_package_name(pkg_name))
+                end
             end
         end
     end
