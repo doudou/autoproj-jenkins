@@ -33,12 +33,32 @@ module Autoproj::Jenkins
         # Create the master buildconf job
         #
         # @return [void]
-        def create_buildconf_job(force: false)
+        def create_buildconf_job(force: false, quiet_period: 5)
             if force
                 server.delete_job("#{job_prefix}buildconf")
             end
-            server.create_job("#{job_prefix}buildconf", 'buildconf.xml',
-                vcs: ws.manifest.vcs)
+            server.create_job("#{job_prefix}buildconf", 'buildconf.xml', quiet_period: quiet_period)
+        end
+
+        # Update the buildconf pipeline
+        #
+        # @param [String] jenkins_url the URL of the jenkins server from the
+        #   point of view of the job's execution
+        # @param [Array<String>] package_names if non-empty, restrict the build
+        #   to these package(s) and their dependencies
+        def update_buildconf_pipeline(*packages)
+            server.update_job_pipeline("#{job_prefix}buildconf", 'buildconf.pipeline',
+                vcs: ws.manifest.vcs,
+                packages: packages)
+        end
+
+        # Create or update the buildconf (master) job
+        def create_or_update_buildconf_job(*package_names, quiet_period: 5)
+            job_name = "#{job_prefix}buildconf"
+            if !server.has_job?(job_name)
+                create_buildconf_job(quiet_period: quiet_period)
+            end
+            update_buildconf_pipeline(*package_names)
         end
 
         # Returns the job name of a given package

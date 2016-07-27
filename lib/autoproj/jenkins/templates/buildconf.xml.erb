@@ -6,15 +6,11 @@
     <properties/>
     <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.9">
         <script>
-node {
-    <%= render_template('bootstrap.pipeline', vcs: vcs) %>
-    sh 'tar cjf buildconf-dev.tar.bz2 dev --exclude=dev/autoproj/remotes --exclude=dev/install --exclude=dev/env.sh'
-    archive 'buildconf-dev.tar.bz2'
-}
         </script>
         <sandbox>true</sandbox>
     </definition>
     <triggers/>
+    <quietPeriod><%= quiet_period %></quietPeriod>
 </flow-definition>
 
 

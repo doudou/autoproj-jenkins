@@ -1,3 +1,2 @@
 source "https://rubygems.org"
 gem 'autoproj', '>= 2.0.0.a'
-gem 'autoproj-jenkins', github: 'doudou/autoproj-jenkins'

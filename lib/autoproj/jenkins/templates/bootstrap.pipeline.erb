@@ -1,6 +1,6 @@
 env.HOME = pwd()
 sh 'wget -O autoproj_install https://raw.githubusercontent.com/rock-core/autoproj/master/bin/autoproj_install'
-def gemfile = "<%= read_and_escape_file 'buildconf-Gemfile' %>"
+def gemfile = "<%= read_and_escape_file gemfile %>"
 writeFile file: 'Gemfile', text: gemfile
 def config = "<%= read_and_escape_file 'buildconf-config.yml' %>"
 writeFile file: 'seed.yml', text: config
