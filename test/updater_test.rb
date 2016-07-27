@@ -66,6 +66,39 @@ module Autoproj::Jenkins
                 base_logging.autobuild.depends_on 'base/cmake'
             end
 
+            it "handles git importers" do
+                package = Autobuild.cmake('base/cmake')
+                package.srcdir = File.join(workspace_dir, 'base', 'cmake')
+                base_cmake = ws.register_package(package, nil)
+                base_cmake.vcs = Autoproj::VCSDefinition.from_raw(
+                    type: :git, url: 'https://github.com/rock-core/base-cmake')
+                updater = Updater.new(ws, jenkins_connect, job_prefix: TestHelper::TEST_JOB_PREFIX)
+                updater.update(base_cmake, quiet_period: 0)
+                jenkins_run_job 'base-cmake'
+            end
+
+            it "handles archive importers" do
+                package = Autobuild.cmake('external/sisl')
+                package.srcdir = File.join(workspace_dir, 'external', 'sisl')
+                package = ws.register_package(package, nil)
+                package.vcs = Autoproj::VCSDefinition.from_raw(
+                    type: :archive, url: 'https://github.com/SINTEF-Geometry/SISL/archive/SISL-4.6.0.tar.gz')
+                updater = Updater.new(ws, jenkins_connect, job_prefix: TestHelper::TEST_JOB_PREFIX)
+                updater.update(package, quiet_period: 0)
+                jenkins_run_job 'external-sisl'
+            end
+
+            it "handles having source directories not matching the package name" do
+                package = Autobuild.cmake('external/sisl')
+                package.srcdir = File.join(workspace_dir, 'test')
+                package = ws.register_package(package, nil)
+                package.vcs = Autoproj::VCSDefinition.from_raw(
+                    type: :archive, url: 'https://github.com/SINTEF-Geometry/SISL/archive/SISL-4.6.0.tar.gz')
+                updater = Updater.new(ws, jenkins_connect, job_prefix: TestHelper::TEST_JOB_PREFIX)
+                updater.update(package, quiet_period: 0)
+                jenkins_run_job 'external-sisl'
+            end
+
             it "creates a job that runs successfully" do
                 updater = Updater.new(ws, jenkins_connect, job_prefix: TestHelper::TEST_JOB_PREFIX)
                 updater.update(base_cmake, quiet_period: 0)

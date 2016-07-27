@@ -96,9 +96,9 @@ module Autoproj::Jenkins
                     buildconf_vcs: ws.manifest.vcs,
                     vcs: package.vcs,
                     package_name: package.name,
+                    package_dir: Pathname.new(package.autobuild.srcdir).relative_path_from(Pathname.new(ws.root_dir)).to_s,
                     artifact_glob: "dev/install/#{package.name}/**/*",
                     job_name: job_name,
-                    package_dir: Pathname.new(package.autobuild.srcdir).relative_path_from(Pathname.new(ws.root_dir)).to_s,
                     upstream_jobs: upstream_jobs,
                     downstream_jobs: downstream_jobs)
             end

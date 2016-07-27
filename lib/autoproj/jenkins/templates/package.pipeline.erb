@@ -7,14 +7,25 @@ node {
     stage 'install upstream artifacts'
     <%= render_template('handle-upstream.pipeline', upstream_jobs: upstream_jobs) %>
 
+    def autoproj = "${pwd()}/dev/.autoproj/bin/autoproj"
+
     dir('dev') {
         stage 'prepare build'
-        <%= render_template("import-#{vcs.type}.pipeline", package_dir: package_dir, vcs: vcs) %>
-        def autoproj = ".autoproj/bin/autoproj"
+        <%= render_template("import-#{vcs.type}.pipeline",
+                            allow_unused: true,
+                            package_dir: package_dir,
+                            vcs: vcs,
+                            package_name: package_name) %>
         sh "${autoproj} osdeps '<%= package_name %>' 'pkg-config'"
 
         stage 'build'
-        sh "${autoproj} build --verbose --force --deps=f '<%= package_name %>'"
+        try {
+            sh "${autoproj} build --force --deps=f '<%= package_name %>'"
+        }
+        catch(err) {
+            echo readFile('install/<%= package_name %>/log/<%= package_name %>-build.log')
+            throw(err)
+        }
     }
 
     stage 'trigger dependencies'
