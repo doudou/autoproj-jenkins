@@ -3,8 +3,11 @@ node {
     <%= render_template('bootstrap.pipeline', vcs: vcs, gemfile: gemfile) %>
     def autoproj = "${pwd()}/dev/.autoproj/bin/autoproj"
     dir('dev') {
+        stage 'checkout and update packages'
+        sh "${autoproj} update <%= packages.map { |pkg| "'#{pkg.name}'" }.join(" ") %> --force-reset"
+
         stage 'update package jobs and trigger them'
-        sh "${autoproj} jenkins update 'http://localhost:8080' <%= packages.map { |pkg| "'#{pkg.name}'" }.join(" ") %><%= " '--job-prefix=#{job_prefix}'" if !job_prefix.empty? %> --trigger --debug"
+        sh "${autoproj} jenkins update 'http://localhost:8080' <%= packages.map { |pkg| "'#{pkg.name}'" }.join(" ") %><%= " '--job-prefix=#{job_prefix}'" if !job_prefix.empty? %> --trigger"
     }
 }
 
