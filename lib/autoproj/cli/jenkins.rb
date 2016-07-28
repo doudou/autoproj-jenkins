@@ -31,9 +31,16 @@ module Autoproj
                 updater.update(*source_packages).map(&:name)
             end
 
-            def trigger_packages(*package_names)
-                package_names = package_names.to_set
-                root_packages = package_names.find_all do |pkg_name|
+            # Returns the "roots" in the trigger graph
+            #
+            # The trigger graph is the inverse of the dependency graph
+            # (a package's dependencies are built before the package itself)
+            #
+            # @param [Array<String>] package_names the packages whose trigger
+            #   roots we want to find
+            # @return [Array<String>] the trigger root packages
+            def trigger_root_packages(*package_names)
+                package_names.find_all do |pkg_name|
                     pkg = ws.manifest.find_autobuild_package(pkg_name)
                     if !pkg
                         raise ArgumentError, "#{pkg_name} is not a known package"
@@ -42,7 +49,17 @@ module Autoproj
                         !package_names.include?(dep_name)
                     end
                 end
-                root_packages.each do |pkg_name|
+            end
+
+            # Trigger the build of the given packages
+            #
+            # It actually only triggers the jobs that are roots in the trigger
+            # graph
+            #
+            # @param [Array<String>] package_names the names of the packages to
+            #   build
+            def trigger_packages(*package_names)
+                trigger_root_packages(*package_names).each do |pkg_name|
                     server.trigger_job(updater.job_name_from_package_name(pkg_name))
                 end
             end

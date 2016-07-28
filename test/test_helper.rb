@@ -30,6 +30,8 @@ module Autoproj::Jenkins
     module TestHelper
         attr_reader :server
 
+        attr_reader :workspace_dir, :ws
+
         def template_path
             Pathname.new(__dir__) + "fixtures" + "templates"
         end
@@ -46,12 +48,39 @@ module Autoproj::Jenkins
                     jenkins_delete_job job_name
                 end
             end
+            if workspace_dir
+                autoproj_delete_workspace
+            end
+            Autobuild::Package.clear
             super
         end
 
-        def jenkins_connect(url: 'http://localhost:8080')
+        def autoproj_create_workspace
+            if @workspace_dir
+                raise ArgumentError, "there is already a workspace created, call #autoproj_delete_workspace first"
+            end
+            @workspace_dir = Dir.mktmpdir
+            @ws = Autoproj::Workspace.new(workspace_dir)
+            ws.autodetect_operating_system
+            ws
+        end
+
+        def autoproj_delete_workspace
+            FileUtils.rm_rf @workspace_dir
+        end
+        
+        def autoproj_create_package(package_type, package_name)
+            package = Autobuild.send(package_type, package_name)
+            ws.register_package(package, nil)
+        end
+
+        def jenkins_connect_options(url: 'http://localhost:8080')
             logger = Logger.new(StringIO.new)
-            @server = Server.new(server_url: url, logger: logger)
+            Hash[server_url: url, logger: logger]
+        end
+
+        def jenkins_connect(url: 'http://localhost:8080')
+            @server = Server.new(**jenkins_connect_options(url: url))
         end
 
         def jenkins_jobs
