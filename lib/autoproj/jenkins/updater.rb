@@ -49,8 +49,12 @@ module Autoproj::Jenkins
         # @param [Array<Autoproj::PackageDefinition>] packages if non-empty,
         #   restrict operations to these packages and their dependencies
         def update_buildconf_pipeline(*packages, gemfile: 'buildconf-Gemfile')
+            manifest_vcs = ws.manifest.vcs
+            if manifest_vcs.local? || manifest_vcs.none?
+                raise ArgumentError, "cannot use Jenkins to build an autoproj buildconf that is not on a remotely acessible VCS"
+            end
             server.update_job_pipeline("#{job_prefix}buildconf", 'buildconf.pipeline',
-                vcs: ws.manifest.vcs,
+                vcs: manifest_vcs,
                 packages: packages,
                 gemfile: gemfile,
                 job_prefix: job_prefix)

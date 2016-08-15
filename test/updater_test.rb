@@ -26,20 +26,36 @@ module Autoproj::Jenkins
             FileUtils.rm_rf workspace_dir
         end
 
-        describe "#update_buildconf_job" do
+        describe "#create_or_update_buildconf_job" do
+            attr_reader :updater
+            before do
+                @updater = Updater.new(ws, jenkins_connect, job_prefix: TestHelper::TEST_JOB_PREFIX)
+            end
             it "creates the buildconf job if it does not exist" do
-                updater = Updater.new(ws, jenkins_connect, job_prefix: TestHelper::TEST_JOB_PREFIX)
                 updater.create_or_update_buildconf_job(gemfile: 'buildconf-vagrant-Gemfile')
                 assert jenkins_has_job?('buildconf')
             end
             it "restricts itself to the packages given on the command line and its dependencies" do
-                updater = Updater.new(ws, jenkins_connect, job_prefix: TestHelper::TEST_JOB_PREFIX)
                 updater.create_or_update_buildconf_job(base_logging, quiet_period: 0, gemfile: 'buildconf-vagrant-Gemfile')
                 jenkins_run_job 'buildconf'
                 assert jenkins_has_job?('base-cmake')
                 assert jenkins_has_job?('base-logging')
                 assert !jenkins_has_job?('base-types')
                 jenkins_join_job 'base-logging'
+            end
+            it "raises if the autoproj buildconf has no vcs" do
+                ws.manifest.vcs = Autoproj::VCSDefinition.none
+                assert_raises(ArgumentError) do
+                    updater.create_or_update_buildconf_job(base_logging, quiet_period: 0)
+                end
+                refute jenkins_has_job?('base-logging')
+            end
+            it "raises if the autoproj buildconf has a local vcs" do
+                ws.manifest.vcs = Autoproj::VCSDefinition.from_raw('type' => 'local', 'url' => '/test')
+                assert_raises(ArgumentError) do
+                    updater.create_or_update_buildconf_job(base_logging, quiet_period: 0)
+                end
+                refute jenkins_has_job?('base-logging')
             end
         end
 
