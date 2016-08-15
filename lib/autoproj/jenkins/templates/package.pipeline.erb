@@ -23,9 +23,10 @@ node {
             sh "${autoproj} build --force --deps=f '<%= package_name %>'"
         }
         catch(err) {
-            echo readFile('install/<%= package_name %>/log/<%= package_name %>-build.log')
+            archive includes: 'install/<%= package_name %>/log/<%= package_name %>-*.log'
             throw(err)
         }
+        archive includes: 'install/<%= package_name %>/log/<%= package_name %>-*.log'
     }
 
     stage 'trigger dependencies'
