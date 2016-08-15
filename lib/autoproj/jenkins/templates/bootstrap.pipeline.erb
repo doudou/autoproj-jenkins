@@ -9,7 +9,7 @@ writeFile file: 'Gemfile', text: gemfile
 def config = "<%= render_template('buildconf-config.yml', vcs: vcs, escape: true) %>"
 writeFile file: 'seed.yml', text: config
 dir('dev') {
-    sh "ruby ../autoproj_install --seed-config=../seed.yml --gems-path=/var/lib/jenkins/cache/gems --gemfile=../Gemfile"
+    sh "ruby ../autoproj_install --skip-stage2 --seed-config=../seed.yml --gems-path=/var/lib/jenkins/cache/gems --gemfile=../Gemfile"
     <%= render_template("import-#{vcs.type}.pipeline",
                         allow_unused: true,
                         package_dir: 'autoproj',
