@@ -1,0 +1,17 @@
+def upstream_jobs = [<%= upstream_jobs.map { |job_name| "'#{job_name}'" }.join(", ") %>]
+
+// Iterate list -- NOTE: we cannot use groovy style or even modern java style iteration
+for (int i = 0; i < upstream_jobs.size(); i++) {
+    def job = Jenkins.instance.getItem(upstream_jobs[i])
+    if (!job) {
+        error("cannot find upstream job ${upstream_jobs[i]}")
+    }
+
+    if (job.isInQueue() || job.isBuilding())
+    {
+        echo "some upstream jobs are building, skipping this build"
+        currentBuild.result = 'NOT_BUILT';
+        return;
+    }
+}
+
