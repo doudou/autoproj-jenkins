@@ -34,19 +34,11 @@ module Autoproj
             def init(url, *package_names)
                 require 'autoproj/cli/jenkins'
                 ops = create_ops(url)
-                if options[:dev]
-                    gemfile = 'buildconf-vagrant-Gemfile'
-                    autoproj_install_path = '/opt/autoproj/bin/autoproj_install'
-                else
-                    gemfile = 'buildconf-Gemfile'
-                    autoproj_install_path = nil
-                end
 
                 ops.create_or_update_buildconf_job(
                     *package_names,
-                    gemfile: gemfile,
-                    autoproj_install_path: autoproj_install_path,
-                    force: options[:force])
+                    force: options[:force],
+                    dev: options[:dev])
                 if options[:trigger]
                     ops.trigger_buildconf_job
                 end
@@ -57,13 +49,15 @@ module Autoproj
             option :trigger, desc: 'trigger the packages once updated',
                 type: :boolean, default: false
             option :force, desc: 'ignore the current state, generate jobs as if nothing was ever done'
+            option :dev, desc: 'assume that the jenkins instance is a development instance under vagrant and that autoproj-jenkins is made available as /opt/autoproj-jenkins',
+                type: :boolean, default: false
             option :state_file, desc: 'the file containing the state of the buildconf last time #add was called',
                 type: :string, default: 'autoproj-jenkins-state.yml'
             def update(url, *package_names)
                 require 'autoproj/cli/jenkins'
                 ops = create_ops(url)
                 Autoproj.report(silent: !options[:debug], debug: options[:debug]) do
-                    updated_packages = ops.add_or_update_packages(*package_names)
+                    updated_packages = ops.add_or_update_packages(*package_names, dev: options[:dev])
                     if options[:trigger]
                         ops.trigger_packages(*updated_packages)
                     end

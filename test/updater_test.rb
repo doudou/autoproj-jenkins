@@ -60,13 +60,12 @@ module Autoproj::Jenkins
         end
 
         describe "#update" do
+            attr_reader :updater
+            before do
+                @updater = Updater.new(ws, jenkins_connect, job_prefix: TestHelper::TEST_JOB_PREFIX)
+            end
+
             it "handles git importers" do
-                package = Autobuild.cmake('base/cmake')
-                package.srcdir = File.join(workspace_dir, 'base', 'cmake')
-                base_cmake = ws.register_package(package, nil)
-                base_cmake.vcs = Autoproj::VCSDefinition.from_raw(
-                    type: :git, url: 'https://github.com/rock-core/base-cmake')
-                updater = Updater.new(ws, jenkins_connect, job_prefix: TestHelper::TEST_JOB_PREFIX)
                 updater.update(base_cmake, quiet_period: 0)
                 jenkins_run_job 'base-cmake'
             end
@@ -77,31 +76,23 @@ module Autoproj::Jenkins
                 package = ws.register_package(package, nil)
                 package.vcs = Autoproj::VCSDefinition.from_raw(
                     type: :archive, url: 'https://github.com/SINTEF-Geometry/SISL/archive/SISL-4.6.0.tar.gz')
-                updater = Updater.new(ws, jenkins_connect, job_prefix: TestHelper::TEST_JOB_PREFIX)
                 updater.update(package, quiet_period: 0)
                 jenkins_run_job 'external-sisl'
             end
 
             it "handles having source directories not matching the package name" do
-                package = Autobuild.cmake('external/sisl')
-                package.srcdir = File.join(workspace_dir, 'test')
-                package = ws.register_package(package, nil)
-                package.vcs = Autoproj::VCSDefinition.from_raw(
-                    type: :archive, url: 'https://github.com/SINTEF-Geometry/SISL/archive/SISL-4.6.0.tar.gz')
-                updater = Updater.new(ws, jenkins_connect, job_prefix: TestHelper::TEST_JOB_PREFIX)
-                updater.update(package, quiet_period: 0)
-                jenkins_run_job 'external-sisl'
+                base_cmake.autobuild.srcdir = File.join(workspace_dir, 'test')
+                updater.update(base_cmake, quiet_period: 0)
+                jenkins_run_job 'base-cmake'
             end
 
             it "creates a job that runs successfully" do
-                updater = Updater.new(ws, jenkins_connect, job_prefix: TestHelper::TEST_JOB_PREFIX)
                 updater.update(base_cmake, quiet_period: 0)
                 jenkins_run_job 'base-cmake'
             end
 
             it "raises if the package VCS is not supported" do
                 base_cmake.vcs = Autoproj::VCSDefinition.from_raw(type: :unknown, url: '/test/')
-                updater = Updater.new(ws, jenkins_connect, job_prefix: TestHelper::TEST_JOB_PREFIX)
                 e = assert_raises(UnhandledVCS) do
                     updater.update(base_cmake)
                 end
@@ -111,7 +102,6 @@ module Autoproj::Jenkins
             end
 
             it "handles dependencies between packages" do
-                updater = Updater.new(ws, jenkins_connect, job_prefix: TestHelper::TEST_JOB_PREFIX)
                 updater.update(base_cmake, base_logging, quiet_period: 0)
                 jenkins_start_job 'base-cmake'
                 jenkins_join_job 'base-cmake'
@@ -119,7 +109,6 @@ module Autoproj::Jenkins
             end
 
             it "waits for upstream jobs to finish" do
-                updater = Updater.new(ws, jenkins_connect, job_prefix: TestHelper::TEST_JOB_PREFIX)
                 updater.update(base_cmake, base_logging, quiet_period: 0)
                 jenkins_start_job 'base-cmake'
                 # The 'base-logging' job would fail without synchronization

@@ -46,9 +46,14 @@ module Autoproj::Jenkins
         # @param [String] gemfile the gemfile template that should be used for
         #   the autoproj bootstrap. Mostly used for autoproj-jenkins development
         #   within VMs
+        # @param [String] autoproj_install_path a path local to the jenkins
+        #   workspace where the autoproj_install script will be. If unset,
+        #   downloads it from github.com
+        # @param [Boolean] dev whether the packages pipelines should be updated
+        #   with --dev or not
         # @param [Array<Autoproj::PackageDefinition>] packages if non-empty,
         #   restrict operations to these packages and their dependencies
-        def update_buildconf_pipeline(*packages, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil)
+        def update_buildconf_pipeline(*packages, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil, dev: false)
             manifest_vcs = ws.manifest.vcs
             if manifest_vcs.local? || manifest_vcs.none?
                 raise ArgumentError, "cannot use Jenkins to build an autoproj buildconf that is not on a remotely acessible VCS"
@@ -59,7 +64,8 @@ module Autoproj::Jenkins
                 packages: packages,
                 gemfile: gemfile,
                 autoproj_install_path: autoproj_install_path,
-                job_prefix: job_prefix)
+                job_prefix: job_prefix,
+                dev: dev)
         end
 
         # Create or update the buildconf (master) job
@@ -71,7 +77,7 @@ module Autoproj::Jenkins
         #   within VMs
         # @param [Integer] quiet_period the job's quiet period, in seconds.
         #   Mostly used within autoproj-jenkins tests
-        def create_or_update_buildconf_job(*packages, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil, quiet_period: 5)
+        def create_or_update_buildconf_job(*packages, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil, dev: false, quiet_period: 5)
             job_name = "#{job_prefix}buildconf"
             if !server.has_job?(job_name)
                 create_buildconf_job(quiet_period: quiet_period)
@@ -79,7 +85,8 @@ module Autoproj::Jenkins
             update_buildconf_pipeline(
                 *packages,
                 gemfile: gemfile,
-                autoproj_install_path: autoproj_install_path)
+                autoproj_install_path: autoproj_install_path,
+                dev: dev)
         end
 
         # Returns the job name of a given package
@@ -111,7 +118,7 @@ module Autoproj::Jenkins
         end
 
         # Create jobs and dependencies to handle the given set of packages
-        def update(*packages, quiet_period: 5)
+        def update(*packages, quiet_period: 5, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil)
             reverse_dependencies = ws.manifest.compute_revdeps
 
             packages.each do |package|
@@ -141,7 +148,9 @@ module Autoproj::Jenkins
                     artifact_glob: "dev/install/#{package.name}/**/*",
                     job_name: job_name,
                     upstream_jobs: upstream_jobs,
-                    downstream_jobs: downstream_jobs)
+                    downstream_jobs: downstream_jobs,
+                    gemfile: gemfile,
+                    autoproj_install_path: autoproj_install_path)
             end
         end
     end
