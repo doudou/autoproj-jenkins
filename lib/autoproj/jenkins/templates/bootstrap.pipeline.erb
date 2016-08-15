@@ -1,5 +1,9 @@
 env.HOME = pwd()
+<% if autoproj_install_path %>
+sh 'cp -f "<%= autoproj_install_path %>" ./autoproj_install'
+<% else %>
 sh 'wget -O autoproj_install https://raw.githubusercontent.com/rock-core/autoproj/master/bin/autoproj_install'
+<% end %>
 def gemfile = "<%= read_and_escape_file gemfile %>"
 writeFile file: 'Gemfile', text: gemfile
 def config = "<%= render_template('buildconf-config.yml', vcs: vcs, escape: true) %>"

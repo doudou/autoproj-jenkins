@@ -3,7 +3,7 @@ stage 'wait for upstream jobs to finish'
 
 node {
     stage 'bootstrap'
-    <%= render_template('bootstrap.pipeline', vcs: buildconf_vcs, gemfile: 'package-Gemfile') %>
+    <%= render_template('bootstrap.pipeline', vcs: buildconf_vcs, gemfile: 'package-Gemfile', autoproj_install_path: autoproj_install_path) %>
     stage 'install upstream artifacts'
     <%= render_template('handle-upstream.pipeline', upstream_jobs: upstream_jobs) %>
 

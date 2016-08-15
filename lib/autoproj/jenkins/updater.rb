@@ -48,15 +48,17 @@ module Autoproj::Jenkins
         #   within VMs
         # @param [Array<Autoproj::PackageDefinition>] packages if non-empty,
         #   restrict operations to these packages and their dependencies
-        def update_buildconf_pipeline(*packages, gemfile: 'buildconf-Gemfile')
+        def update_buildconf_pipeline(*packages, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil)
             manifest_vcs = ws.manifest.vcs
             if manifest_vcs.local? || manifest_vcs.none?
                 raise ArgumentError, "cannot use Jenkins to build an autoproj buildconf that is not on a remotely acessible VCS"
             end
+
             server.update_job_pipeline("#{job_prefix}buildconf", 'buildconf.pipeline',
                 vcs: manifest_vcs,
                 packages: packages,
                 gemfile: gemfile,
+                autoproj_install_path: autoproj_install_path,
                 job_prefix: job_prefix)
         end
 
@@ -69,12 +71,15 @@ module Autoproj::Jenkins
         #   within VMs
         # @param [Integer] quiet_period the job's quiet period, in seconds.
         #   Mostly used within autoproj-jenkins tests
-        def create_or_update_buildconf_job(*packages, gemfile: 'buildconf-Gemfile', quiet_period: 5)
+        def create_or_update_buildconf_job(*packages, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil, quiet_period: 5)
             job_name = "#{job_prefix}buildconf"
             if !server.has_job?(job_name)
                 create_buildconf_job(quiet_period: quiet_period)
             end
-            update_buildconf_pipeline(*packages, gemfile: gemfile)
+            update_buildconf_pipeline(
+                *packages,
+                gemfile: gemfile,
+                autoproj_install_path: autoproj_install_path)
         end
 
         # Returns the job name of a given package

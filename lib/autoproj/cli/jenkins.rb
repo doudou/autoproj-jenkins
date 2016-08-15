@@ -13,13 +13,13 @@ module Autoproj
                 @updater = Autoproj::Jenkins::Updater.new(ws, server, job_prefix: job_prefix)
             end
 
-            def create_or_update_buildconf_job(*package_names, gemfile: 'buildconf-Gemfile', force: false)
+            def create_or_update_buildconf_job(*package_names, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil, force: false)
                 initialize_and_load
                 source_packages, _ = finalize_setup(package_names, ignore_non_imported_packages: false)
                 source_packages = source_packages.map do |package_name|
                     ws.manifest.package(package_name)
                 end
-                updater.create_or_update_buildconf_job(*source_packages, gemfile: gemfile)
+                updater.create_or_update_buildconf_job(*source_packages, gemfile: gemfile, autoproj_install_path: autoproj_install_path)
             end
 
             def add_or_update_packages(*package_names)

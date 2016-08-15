@@ -1,3 +1,4 @@
 source "https://rubygems.org"
-gem 'autoproj', '>= 2.0.0.a'
+gem 'autoproj', path: '/opt/autoproj'
+gem 'autobuild', path: '/opt/autobuild'
 gem 'autoproj-jenkins', path: '/opt/autoproj-jenkins'

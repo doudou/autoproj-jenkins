@@ -34,16 +34,18 @@ module Autoproj
             def init(url, *package_names)
                 require 'autoproj/cli/jenkins'
                 ops = create_ops(url)
-                gemfile =
-                    if options[:dev]
-                        'buildconf-vagrant-Gemfile'
-                    else
-                        'buildconf-Gemfile'
-                    end
+                if options[:dev]
+                    gemfile = 'buildconf-vagrant-Gemfile'
+                    autoproj_install_path = '/opt/autoproj/bin/autoproj_install'
+                else
+                    gemfile = 'buildconf-Gemfile'
+                    autoproj_install_path = nil
+                end
 
                 ops.create_or_update_buildconf_job(
                     *package_names,
                     gemfile: gemfile,
+                    autoproj_install_path: autoproj_install_path,
                     force: options[:force])
                 if options[:trigger]
                     ops.trigger_buildconf_job
