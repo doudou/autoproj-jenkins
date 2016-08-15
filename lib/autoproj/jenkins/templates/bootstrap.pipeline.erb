@@ -15,6 +15,6 @@ dir('dev') {
                         package_dir: 'autoproj',
                         vcs: vcs,
                         package_name: 'autoproj/') %>
-    sh ".autoproj/bin/aup autoproj/"
+    sh ".autoproj/bin/aup autoproj/ --force-reset"
 }
 
