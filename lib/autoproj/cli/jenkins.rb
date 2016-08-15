@@ -17,7 +17,7 @@ module Autoproj
                 initialize_and_load
                 source_packages, _ = finalize_setup(package_names, ignore_non_imported_packages: false)
                 source_packages = source_packages.map do |package_name|
-                    ws.manifest.package(package_name)
+                    ws.manifest.package_definition_by_name(package_name)
                 end
                 updater.create_or_update_buildconf_job(*source_packages, gemfile: gemfile, autoproj_install_path: autoproj_install_path)
             end
@@ -26,7 +26,7 @@ module Autoproj
                 initialize_and_load
                 source_packages, _ = finalize_setup(package_names, ignore_non_imported_packages: false)
                 source_packages = source_packages.map do |package_name|
-                    ws.manifest.package(package_name)
+                    ws.manifest.package_definition_by_name(package_name)
                 end
                 updater.update(*source_packages).map(&:name)
             end
