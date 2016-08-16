@@ -21,7 +21,7 @@ node {
 
         stage 'build'
         try {
-            sh "${autoproj} build --force --deps=f '<%= package_name %>'"
+            sh "${autoproj} build --force --deps=f '<%= package_name %>' -p1"
         }
         catch(err) {
             archive includes: 'install/<%= package_name %>/log/<%= package_name %>-*.log'
@@ -38,6 +38,6 @@ node {
 
     dir('dev') {
         stage 'tests'
-        sh "#{autoproj} test '<%= package_name %>'"
+        sh "#{autoproj} test '<%= package_name %>' -p1"
     }
 }
