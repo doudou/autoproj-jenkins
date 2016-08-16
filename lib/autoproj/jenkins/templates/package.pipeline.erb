@@ -16,6 +16,7 @@ node {
                             package_dir: package_dir,
                             vcs: vcs,
                             package_name: package_name) %>
+        sh "${autoproj} test enable '<%= package_name %>'"
         sh "${autoproj} osdeps '<%= package_name %>' 'pkg-config'"
 
         stage 'build'
@@ -34,4 +35,9 @@ node {
                         job_name: job_name,
                         artifact_glob: artifact_glob,
                         downstream_jobs: downstream_jobs) %>
+
+    dir('dev') {
+        stage 'tests'
+        sh "#{autoproj} test '<%= package_name %>'"
+    }
 }
