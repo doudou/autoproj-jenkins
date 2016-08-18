@@ -2,6 +2,8 @@ stage 'wait for upstream jobs to finish'
 <%= render_template('abort-if-upstream-is-building.pipeline', upstream_jobs: upstream_jobs) %>
 
 node {
+    sh "rm -rf install/log"
+
     stage 'bootstrap'
     <%= render_template('bootstrap.pipeline', vcs: buildconf_vcs, gemfile: gemfile, autoproj_install_path: autoproj_install_path) %>
     stage 'install upstream artifacts'
