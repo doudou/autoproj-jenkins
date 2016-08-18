@@ -36,8 +36,10 @@ node {
                         artifact_glob: artifact_glob,
                         downstream_jobs: downstream_jobs) %>
 
+    stage 'tests'
     dir('dev') {
-        stage 'tests'
-        sh "#{autoproj} test '<%= package_name %>' -p1"
+        sh "${autoproj} test -p=1 '<%= package_name %>'"
+        sh "${autoproj} jenkins postprocess-tests ../test '<%= package_name %>'"
     }
+    junit allowEmptyResults: true, keepLongStdio: true, testResults: 'test/*.xml'
 }

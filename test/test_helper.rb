@@ -15,6 +15,7 @@ if ENV['TEST_ENABLE_COVERAGE'] == '1'
 end
 
 require 'autoproj/jenkins'
+require 'autoproj/test'
 require 'minitest/autorun'
 require 'rexml/document'
 

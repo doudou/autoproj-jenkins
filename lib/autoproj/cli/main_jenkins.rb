@@ -63,6 +63,13 @@ module Autoproj
                     end
                 end
             end
+            
+            desc 'postprocess-tests OUTPUT_DIR [PACKAGE_NAME]', 'postprocesses test result formatted in various formats to convert them into the JUnit XML format understood by Jenkins'
+            def postprocess_tests(output_dir, *package_names)
+                require 'autoproj/cli/test_postprocessing'
+                ops = TestPostprocessing.new(Workspace.from_pwd)
+                ops.process(output_dir, *package_names)
+            end
         end
     end
 end
