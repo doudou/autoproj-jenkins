@@ -59,9 +59,14 @@ module Autoproj::Jenkins
                 raise ArgumentError, "cannot use Jenkins to build an autoproj buildconf that is not on a remotely acessible VCS"
             end
 
+            job_names = packages.
+                map { |pkg| job_name_from_package_name(pkg.name) }.
+                compact
+
             server.update_job_pipeline("#{job_prefix}buildconf", 'buildconf.pipeline',
                 vcs: manifest_vcs,
                 packages: packages,
+                job_names: job_names,
                 gemfile: gemfile,
                 autoproj_install_path: autoproj_install_path,
                 job_prefix: job_prefix,
@@ -117,6 +122,29 @@ module Autoproj::Jenkins
             end
         end
 
+        def compute_upstream_packages(package)
+            upstream_packages = package.autobuild.dependencies.inject(Set.new) do |all, pkg_name|
+                all << pkg_name
+                ws.manifest.find_autobuild_package(pkg_name).all_dependencies(all)
+            end
+            upstream_packages.delete(package.name)
+            upstream_packages
+        end
+
+        def compute_downstream_packages(package, reverse_dependencies)
+            queue   = [package.name]
+            results = Set.new
+            while !queue.empty?
+                p_name = queue.shift
+                if !results.include?(p_name)
+                    results << p_name
+                    queue.concat(reverse_dependencies[p_name].to_a)
+                end
+            end
+            results.delete(package.name)
+            results
+        end
+
         # Create jobs and dependencies to handle the given set of packages
         def update(*packages, quiet_period: 5, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil)
             reverse_dependencies = ws.manifest.compute_revdeps
@@ -131,14 +159,19 @@ module Autoproj::Jenkins
             package_names = packages.map(&:name).to_set
             packages.each do |package|
                 job_name = job_name_from_package_name(package.name)
-                upstream_jobs = package.autobuild.dependencies.
-                    map { |pkg_name| job_name_from_package_name(pkg_name) if package_names.include?(pkg_name) }
-
-                downstream_jobs = (reverse_dependencies[package.name] & package_names).
-                    map { |pkg_name| job_name_from_package_name(pkg_name) }
                 if !Autoproj::Jenkins.has_template?("import-#{package.vcs.type}.pipeline")
                     raise UnhandledVCS, "the #{package.vcs.type} importer, used by #{package.name}, is not supported by autoproj-jenkins"
                 end
+
+                upstream_packages = compute_upstream_packages(package)
+                upstream_jobs = upstream_packages.
+                    map { |pkg_name| job_name_from_package_name(pkg_name) if package_names.include?(pkg_name) }.
+                    compact
+
+                downstream_packages = compute_downstream_packages(package, reverse_dependencies)
+                downstream_jobs = downstream_packages.
+                    map { |pkg_name| job_name_from_package_name(pkg_name) if package_names.include?(pkg_name) }.
+                    compact
 
                 server.update_job_pipeline(job_name, 'package.pipeline',
                     buildconf_vcs: ws.manifest.vcs,

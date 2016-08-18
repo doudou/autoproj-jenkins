@@ -7,9 +7,10 @@ for (int i = 0; i < upstream_jobs.size(); i++) {
         error("cannot find upstream job ${upstream_jobs[i]}")
     }
 
-    if (job.isInQueue() || job.isBuilding())
+    def result = job.getLastBuild().getResult()
+    if (result != Result.SUCCESS && result != Result.UNSTABLE)
     {
-        echo "${upstream_jobs[i]} is building, skipping this build"
+        echo "${upstream_jobs[i]} did not finish successfully, aborting this build"
         currentBuild.result = 'NOT_BUILT';
         return;
     }

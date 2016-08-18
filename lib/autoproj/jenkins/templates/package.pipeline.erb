@@ -1,5 +1,6 @@
-stage 'wait for upstream jobs to finish'
-<%= render_template('abort-if-upstream-is-building.pipeline', upstream_jobs: upstream_jobs) %>
+stage 'waiting for upstream jobs to finish'
+<%= render_template('wait-upstream.pipeline', upstream_jobs: upstream_jobs) %>
+<%= render_template('abort-if-upstream-failed.pipeline', upstream_jobs: upstream_jobs) %>
 
 node {
     sh "rm -rf install/log"
