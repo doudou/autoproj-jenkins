@@ -39,8 +39,16 @@ node {
                         downstream_jobs: downstream_jobs) %>
 
     stage 'tests'
-    dir('dev') {
-        sh "${autoproj} test -p=1 '<%= package_name %>'"
+    dir('dev')
+    {
+        try
+        {
+            sh "${autoproj} test -p=1 '<%= package_name %>'"
+        }
+        catch(err)
+        {
+            currentBuild.result = 'UNSTABLE'
+        }
         sh "${autoproj} jenkins postprocess-tests ../test '<%= package_name %>'"
     }
     junit allowEmptyResults: true, keepLongStdio: true, testResults: 'test/*.xml'
