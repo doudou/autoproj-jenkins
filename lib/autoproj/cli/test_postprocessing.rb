@@ -26,6 +26,7 @@ module Autoproj
                 initialize_and_load
                 source_packages, _ = finalize_setup(
                     package_names, 
+                    recursive: false,
                     ignore_non_imported_packages: true)
                 source_packages = source_packages.map do |package_name|
                     ws.manifest.package_definition_by_name(package_name)
