@@ -1,16 +1,51 @@
-waitUntil {
-    def upstream_jobs = [<%= upstream_jobs.map { |job_name| "'#{job_name}'" }.join(", ") %>]
+def upstream_jobs = [<%= upstream_jobs.map { |job_name| "'#{job_name}'" }.join(", ") %>]
+
+def isUpstreamOK(String jobName)
+{
+    def job = Jenkins.instance.getItem(jobName)
+    if (!job)
+    {
+        error("cannot find upstream job ${jobName}")
+    }
+    if (job.isInQueue() || job.isBuilding())
+    {
+        return 'IN_PROGRESS'
+    }
+    else
+    {
+        def result = job.getLastBuild().getResult()
+        if (result == Result.SUCCESS || result == Result.UNSTABLE)
+        {
+            return 'OK'
+        }
+        else
+        {
+            return 'FAILED'
+        }
+    }
+}
+
+def wait_continue = true;
+while(wait_continue)
+{
+    wait_continue = false;
 
     // Iterate list -- NOTE: we cannot use groovy style or even modern java style iteration
-    def all_ready = true
-    for (int i = 0; all_ready && (i < upstream_jobs.size()); i++) {
-        def job = Jenkins.instance.getItem(upstream_jobs[i])
-        if (!job) {
-            error("cannot find upstream job ${upstream_jobs[i]}")
+    for (int i = 0; i < upstream_jobs.size(); i++)
+    {
+        def status = isUpstreamOK(upstream_jobs[i])
+        if (status == 'IN_PROGRESS')
+        {
+            echo "waiting for job ${upstream_jobs[i]} to finish"
+            wait_continue = true
+            sleep time: 1, units: 'SECONDS'
         }
-
-        all_ready = all_ready && (!job.isInQueue() && !job.isBuilding())
+        else if (status == 'FAILED')
+        {
+            echo "${upstream_jobs[i]} did not finish successfully, aborting this build"
+            currentBuild.result = 'NOT_BUILT';
+            return;
+        }
     }
-    return all_ready
 }
 
