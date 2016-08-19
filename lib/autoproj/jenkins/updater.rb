@@ -173,12 +173,20 @@ module Autoproj::Jenkins
                     map { |pkg_name| job_name_from_package_name(pkg_name) if package_names.include?(pkg_name) }.
                     compact
 
+                artifact_path =
+                    if package.autobuild.srcdir == package.autobuild.prefix
+                        Pathname.new(package.autobuild.srcdir).
+                            relative_path_from(Pathname.new(ws.root_dir)).to_s
+                    else
+                        "install/#{package.name}"
+                    end
+
                 server.update_job_pipeline(job_name, 'package.pipeline',
                     buildconf_vcs: ws.manifest.vcs,
                     vcs: package.vcs,
                     package_name: package.name,
                     package_dir: Pathname.new(package.autobuild.srcdir).relative_path_from(Pathname.new(ws.root_dir)).to_s,
-                    artifact_glob: "dev/install/#{package.name}/**/*",
+                    artifact_glob: "dev/#{artifact_path}/**/*",
                     job_name: job_name,
                     upstream_jobs: upstream_jobs,
                     downstream_jobs: downstream_jobs,
