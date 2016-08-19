@@ -18,7 +18,7 @@ module Autoproj
                     end
 
                     puts "connecting to jenkins '#{url}' with prefix '#{options[:prefix]}'"
-                    Jenkins.new(Autoproj::Workspace.from_pwd,
+                    Jenkins.new(Autoproj::Workspace.from_default,
                                 job_prefix: options[:job_prefix],
                                 server_url: url,
                                 **auth)
@@ -67,7 +67,7 @@ module Autoproj
             desc 'postprocess-tests OUTPUT_DIR [PACKAGE_NAME]', 'postprocesses test result formatted in various formats to convert them into the JUnit XML format understood by Jenkins'
             def postprocess_tests(output_dir, *package_names)
                 require 'autoproj/cli/test_postprocessing'
-                ops = TestPostprocessing.new(Workspace.from_pwd)
+                ops = TestPostprocessing.new(Workspace.from_default)
                 ops.process(output_dir, *package_names)
             end
         end
