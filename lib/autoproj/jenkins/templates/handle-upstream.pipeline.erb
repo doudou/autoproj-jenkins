@@ -4,7 +4,8 @@ dir('artifacts') { }
 <% upstream_jobs.each do |job_name| %>
 step ([$class: 'CopyArtifact',
     projectName: '<%= job_name %>',
-    filter: 'artifacts/<%= job_name%>-prefix.zip'])
+    filter: 'artifacts/<%= job_name%>-prefix.zip',
+    selector: [$class: 'StatusBuildSelector', stable: false]])
 <% end %>
 <% upstream_jobs.each do |job_name| %>
 unzip zipFile: 'artifacts/<%= job_name %>-prefix.zip'
