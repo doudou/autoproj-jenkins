@@ -9,7 +9,7 @@ module Autoproj
             namespace 'jenkins'
 
             no_commands do
-                def create_ops(url)
+                def create_ops(url, target_os: nil)
                     if password_file = options[:password_file]
                         auth = Hash[username: 'autoproj-jenkins',
                                     password: File.read(password_file)]
@@ -17,8 +17,19 @@ module Autoproj
                         auth = Hash.new
                     end
 
+                    workspace_options = Hash.new
+                    if target_os
+                        names, versions =  target_os.split(':')
+                        names = names.split(',')
+                        names << 'default'
+                        versions = versions.split(',')
+                        versions << 'default'
+                        workspace_options[:os_package_resolver] = OSPackageResolver.new(operating_system: [names, versions])
+                    end
+                    ws = Autoproj::Workspace.default(**workspace_options)
+
                     puts "connecting to jenkins '#{url}' with prefix '#{options[:prefix]}'"
-                    Jenkins.new(Autoproj::Workspace.from_default,
+                    Jenkins.new(ws,
                                 job_prefix: options[:job_prefix],
                                 server_url: url,
                                 **auth)
@@ -31,9 +42,11 @@ module Autoproj
                 type: :boolean, default: false
             option :dev, desc: 'assume that the jenkins instance is a development instance under vagrant and that autoproj-jenkins is made available as /opt/autoproj-jenkins',
                 type: :boolean, default: false
+            option :target_os, desc: "the autoproj definition for the target OS as name0,name1:version0,version1",
+                default: nil
             def init(url, *package_names)
                 require 'autoproj/cli/jenkins'
-                ops = create_ops(url)
+                ops = create_ops(url, target_os: options[:target_os])
 
                 ops.create_or_update_buildconf_job(
                     *package_names,
