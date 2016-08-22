@@ -11,8 +11,8 @@ module Autoproj
             no_commands do
                 def create_ops(url, target_os: nil)
                     if password_file = options[:password_file]
-                        auth = Hash[username: 'autoproj-jenkins',
-                                    password: File.read(password_file)]
+                        auth = Hash[username: 'admin',
+                                    password: File.read(password_file).strip]
                     else
                         auth = Hash.new
                     end
