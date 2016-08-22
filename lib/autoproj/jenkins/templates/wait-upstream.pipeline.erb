@@ -11,6 +11,10 @@ def isUpstreamOK(String jobName)
     {
         return 'IN_PROGRESS'
     }
+    else if (!job.getLastBuild())
+    {
+        return 'IN_PROGRESS'
+    }
     else
     {
         def result = job.getLastBuild().getResult()
