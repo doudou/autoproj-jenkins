@@ -10,6 +10,10 @@ node {
     <%= render_template('handle-upstream.pipeline', upstream_jobs: upstream_jobs) %>
 
     def autoproj = "${pwd()}/dev/.autoproj/bin/autoproj"
+    def jenkins_dependency_overrides = "<%= render_template 'jenkins_dependency_overrides.rb',
+        escape: true, package_name: package_name, upstream_packages: upstream_packages %>"
+    writeFile file: 'dev/autoproj/overrides.d/99_jenkins_dependency_overrides.rb',
+        text: jenkins_dependency_overrides
 
     dir('dev') {
         stage 'prepare build'

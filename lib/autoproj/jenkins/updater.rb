@@ -163,10 +163,10 @@ module Autoproj::Jenkins
                     raise UnhandledVCS, "the #{package.vcs.type} importer, used by #{package.name}, is not supported by autoproj-jenkins"
                 end
 
-                upstream_packages = compute_upstream_packages(package)
+                upstream_packages = compute_upstream_packages(package).
+                    find_all { |pkg_name| package_names.include?(pkg_name) }
                 upstream_jobs = upstream_packages.
-                    map { |pkg_name| job_name_from_package_name(pkg_name) if package_names.include?(pkg_name) }.
-                    compact
+                    map { |pkg_name| job_name_from_package_name(pkg_name) }
 
                 downstream_packages = compute_downstream_packages(package, reverse_dependencies)
                 downstream_jobs = downstream_packages.
@@ -188,6 +188,7 @@ module Autoproj::Jenkins
                     package_dir: Pathname.new(package.autobuild.srcdir).relative_path_from(Pathname.new(ws.root_dir)).to_s,
                     artifact_glob: "dev/#{artifact_path}/**/*",
                     job_name: job_name,
+                    upstream_packages: upstream_packages,
                     upstream_jobs: upstream_jobs,
                     downstream_jobs: downstream_jobs,
                     gemfile: gemfile,
