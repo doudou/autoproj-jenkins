@@ -78,10 +78,15 @@ module Autoproj
             end
             
             desc 'postprocess-tests OUTPUT_DIR [PACKAGE_NAME]', 'postprocesses test result formatted in various formats to convert them into the JUnit XML format understood by Jenkins'
+            option :after, desc: "if provided, any report file that is older than this file will be ignored",
+                default: nil
             def postprocess_tests(output_dir, *package_names)
                 require 'autoproj/cli/test_postprocessing'
-                ops = TestPostprocessing.new(Workspace.from_default)
-                ops.process(output_dir, *package_names)
+                ops = TestPostprocessing.new(Workspace.default)
+                if options[:after]
+                    reference_time = File.stat(options[:after]).mtime
+                end
+                ops.process(output_dir, *package_names, after: reference_time)
             end
         end
     end

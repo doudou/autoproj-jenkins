@@ -22,7 +22,7 @@ module Autoproj
             end
 
 
-            def process(output_dir, *package_names)
+            def process(output_dir, *package_names, after: nil)
                 initialize_and_load
                 source_packages, _ = finalize_setup(
                     package_names, 
@@ -34,8 +34,16 @@ module Autoproj
 
                 source_packages.each do |pkg|
                     utility = pkg.autobuild.test_utility
+                    found_something = false
                     convertions.each do |glob, xsl|
                         Dir.glob(File.join(utility.target_dir, glob)) do |input_file|
+                            input_mtime = File.stat(input_file).mtime
+                            if after && input_mtime < after
+                                Autoproj.message "  ignoring #{input_file}, its modification time is #{input_mtime} which is after #{after}"
+                                next
+                            end
+
+                            found_something = true
                             FileUtils.mkdir_p output_dir
                             output_file = File.join(output_dir, File.basename(input_file))
                             if xsl
@@ -43,8 +51,12 @@ module Autoproj
                             else
                                 FileUtils.copy_file input_file, output_file
                             end
-                            puts "generated #{output_file} from #{input_file} for #{pkg.name}"
+                            Autoproj.message "  generated #{output_file} from #{input_file} for #{pkg.name}"
                         end
+                    end
+
+                    if !found_something
+                        Autoproj.message "found no test results for #{pkg.name}"
                     end
                 end
             end

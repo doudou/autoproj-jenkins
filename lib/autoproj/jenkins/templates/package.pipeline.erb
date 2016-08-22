@@ -39,17 +39,20 @@ node {
                         downstream_jobs: downstream_jobs) %>
 
     stage 'tests'
+    def test_timestamp_path = "${pwd()}/test-timestamp"
+    touch file: test_timestamp_path
+    def test_output_path    = "${pwd()}/test"
+    def autoproj_test_failed = false
     dir('dev')
     {
-        try
-        {
-            sh "${autoproj} test -p=1 '<%= package_name %>'"
-        }
-        catch(err)
-        {
-            currentBuild.result = 'UNSTABLE'
-        }
-        sh "${autoproj} jenkins postprocess-tests ../test '<%= package_name %>'"
+        try { sh "${autoproj} test -p=1 '<%= package_name %>'" }
+        catch(err) { autoproj_test_failed = true }
+        try { sh "${autoproj} jenkins postprocess-tests --after=${test_timestamp_path} ${test_output_path} '<%= package_name %>'" }
+        catch(err) { autoproj_test_failed = true }
     }
-    junit allowEmptyResults: true, keepLongStdio: true, testResults: 'test/*.xml'
+    junit allowEmptyResults: true, keepLongStdio: true, testResults: "test/*.xml"
+    if (autoproj_test_failed)
+    {
+        currentBuild.result = 'UNSTABLE'
+    }
 }
