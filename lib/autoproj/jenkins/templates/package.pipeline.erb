@@ -22,7 +22,7 @@ node {
                             package_dir: package_dir,
                             vcs: vcs,
                             package_name: package_name) %>
-        sh "${autoproj} test enable '<%= package_name %>'"
+        sh "${autoproj} test disable '<%= package_name %>'"
         sh "${autoproj} osdeps '<%= package_name %>' 'pkg-config'"
 
         stage 'build'
@@ -49,8 +49,14 @@ node {
     def autoproj_test_failed = false
     dir('dev')
     {
-        try { sh "${autoproj} test -p=1 '<%= package_name %>'" }
+        try {
+            sh "${autoproj} test enable '<%= package_name %>'"
+            sh "${autoproj} osdeps '<%= package_name %>'"
+            sh "${autoproj} build --deps=f '<%= package_name %>'"
+            sh "${autoproj} test -p=1 '<%= package_name %>'"
+        }
         catch(err) { autoproj_test_failed = true }
+
         try { sh "${autoproj} jenkins postprocess-tests --after=${test_timestamp_path} ${test_output_path} '<%= package_name %>'" }
         catch(err) { autoproj_test_failed = true }
     }
