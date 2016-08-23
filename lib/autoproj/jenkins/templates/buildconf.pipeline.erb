@@ -10,14 +10,15 @@ node {
         def arg_packages = "<%= packages.map { |pkg| "'#{pkg.name}'" }.join(" ") %>"
         def arg_dev      = "<%= " --dev" if dev %>"
         def arg_job_prefix = "<%= " '--job-prefix=#{job_prefix}'" if !job_prefix.empty? %>"
-        def credentials = ""
         <% if credentials_id %>
         withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: '<%= credentials_id %>',
                           usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
-            credentials = " --username '${env.USERNAME}' --password '${env.PASSWORD}'"
+            def credentials = " --username '${env.USERNAME}' --password '${env.PASSWORD}'"
+            sh "${autoproj} jenkins update${arg_dev}${arg_job_prefix} 'http://localhost:8080' ${arg_packages}${credentials}"
         }
+        <% else %>
+        sh "${autoproj} jenkins update${arg_dev}${arg_job_prefix} 'http://localhost:8080' ${arg_packages}"
         <% end %>
-        sh "${autoproj} jenkins update${arg_dev}${arg_job_prefix} 'http://localhost:8080' ${arg_packages}${credentials}"
         <% job_names.each do |job_name| %>
         build job: "<%= job_name %>", wait: false
         <% end %>
