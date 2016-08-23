@@ -13,7 +13,7 @@ module Autoproj
                 @updater = Autoproj::Jenkins::Updater.new(ws, server, job_prefix: job_prefix)
             end
 
-            def create_or_update_buildconf_job(*package_names, force: false, dev: false)
+            def create_or_update_buildconf_job(*package_names, force: false, dev: false, credentials_id: nil)
                 initialize_and_load
 
                 if dev
@@ -28,7 +28,9 @@ module Autoproj
                 source_packages = source_packages.map do |package_name|
                     ws.manifest.package_definition_by_name(package_name)
                 end
-                updater.create_or_update_buildconf_job(*source_packages, gemfile: gemfile, autoproj_install_path: autoproj_install_path, dev: dev)
+                updater.create_or_update_buildconf_job(*source_packages, gemfile: gemfile,
+                                                       autoproj_install_path: autoproj_install_path, dev: dev,
+                                                       credentials_id: credentials_id)
             end
 
             def add_or_update_packages(*package_names, dev: false)

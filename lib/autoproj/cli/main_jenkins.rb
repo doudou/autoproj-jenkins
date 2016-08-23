@@ -2,17 +2,29 @@ module Autoproj
     module CLI
         # The 'jenkins' subcommand for autoproj
         class MainJenkins < Thor
-            class_option :password_file, desc: 'file containing the password used for authentication'
+            class_option :username, desc: 'username to the Jenkins CLI (a password will be requested if --password is not given)'
+            class_option :password, desc: 'password to the Jenkins CLI (needs --username)'
             class_option :job_prefix, desc: 'string that should be used as prefix to all generated job names',
                 type: :string, default: ''
 
             namespace 'jenkins'
 
             no_commands do
+                def request_password
+                    STDOUT.print "Password: "
+                    STDOUT.flush
+                    STDIN.noecho do |io|
+                        io.readline.chomp
+                    end
+                end
+
                 def create_ops(url, target_os: nil)
-                    if password_file = options[:password_file]
-                        auth = Hash[username: 'admin',
-                                    password: File.read(password_file).strip]
+                    if username = options[:username]
+                        password = options[:password] || request_password
+                        auth = Hash[username: username,
+                                    password: password]
+                    elsif options[:password]
+                        raise ArgumentError, "--password given without --username"
                     else
                         auth = Hash.new
                     end
@@ -44,12 +56,14 @@ module Autoproj
                 type: :boolean, default: false
             option :target_os, desc: "the autoproj definition for the target OS as name0,name1:version0,version1",
                 default: nil
+            option :credentials_id, desc: "the credentials ID of the username/password credentials that autoproj-jenkins should use to access the jenkins CLI. Won't use any credentials if not given"
             def init(url, *package_names)
                 require 'autoproj/cli/jenkins'
                 ops = create_ops(url, target_os: options[:target_os])
 
                 ops.create_or_update_buildconf_job(
                     *package_names,
+                    credentials_id: options[:credentials_id],
                     force: options[:force],
                     dev: options[:dev])
                 if options[:trigger]
