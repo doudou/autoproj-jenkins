@@ -21,6 +21,7 @@ module Autoproj
                 @convertions = convertions
             end
 
+            class ConvertionFailed < RuntimeError; end
 
             def process(output_dir, *package_names, after: nil)
                 initialize_and_load
@@ -32,6 +33,7 @@ module Autoproj
                     ws.manifest.package_definition_by_name(package_name)
                 end
 
+                has_failures = false
                 source_packages.each do |pkg|
                     utility = pkg.autobuild.test_utility
                     found_something = false
@@ -46,18 +48,27 @@ module Autoproj
                             found_something = true
                             FileUtils.mkdir_p output_dir
                             output_file = File.join(output_dir, File.basename(input_file))
-                            if xsl
-                                xsl_process(input_file, xsl, output_file)
-                            else
-                                FileUtils.copy_file input_file, output_file
+                            begin
+                                if xsl
+                                    xsl_process(input_file, xsl, output_file)
+                                else
+                                    FileUtils.copy_file input_file, output_file
+                                end
+                                Autoproj.message "  generated #{output_file} from #{input_file} for #{pkg.name}"
+                            rescue Exception => e
+                                Autoproj.error e.message
+                                has_failures = true
                             end
-                            Autoproj.message "  generated #{output_file} from #{input_file} for #{pkg.name}"
                         end
                     end
 
                     if !found_something
                         Autoproj.message "found no test results for #{pkg.name}"
                     end
+                end
+            ensure
+                if has_failures
+                    raise ConvertionFailed, "some files failed to convert, see output for more details"
                 end
             end
 
