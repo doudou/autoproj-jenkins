@@ -51,7 +51,8 @@ module Autoproj
                 updater.update(
                     *source_packages,
                     gemfile: gemfile,
-                    autoproj_install_path: autoproj_install_path).
+                    autoproj_install_path: autoproj_install_path,
+                    dev: dev).
                     map(&:name)
             end
 

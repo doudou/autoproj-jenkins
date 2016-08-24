@@ -1,7 +1,7 @@
 stage 'waiting for upstream jobs to finish'
 <%= render_template('wait-upstream.pipeline', upstream_jobs: upstream_jobs) %>
 
-node {
+node<%= "(label: 'master')" if dev %> {
     sh "rm -rf install/log"
 
     stage 'bootstrap'

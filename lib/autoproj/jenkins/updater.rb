@@ -148,7 +148,7 @@ module Autoproj::Jenkins
         end
 
         # Create jobs and dependencies to handle the given set of packages
-        def update(*packages, quiet_period: 5, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil)
+        def update(*packages, quiet_period: 5, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil, dev: false)
             reverse_dependencies = ws.manifest.compute_revdeps
 
             packages.each do |package|
@@ -194,7 +194,8 @@ module Autoproj::Jenkins
                     upstream_jobs: upstream_jobs,
                     downstream_jobs: downstream_jobs,
                     gemfile: gemfile,
-                    autoproj_install_path: autoproj_install_path)
+                    autoproj_install_path: autoproj_install_path,
+                    dev: dev)
             end
         end
     end
