@@ -147,6 +147,17 @@ module Autoproj::Jenkins
             results
         end
 
+        def compute_job_to_package_map(package_names, included_package_names)
+            result = Hash.new
+            package_names.each do |pkg_name|
+                if included_package_names.include?(pkg_name)
+                    job_name = job_name_from_package_name(pkg_name)
+                    result[job_name] = pkg_name
+                end
+            end
+            result
+        end
+
         # Create jobs and dependencies to handle the given set of packages
         def update(*packages, quiet_period: 5, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil, dev: false)
             reverse_dependencies = ws.manifest.compute_revdeps
@@ -165,17 +176,10 @@ module Autoproj::Jenkins
                     raise UnhandledVCS, "the #{package.vcs.type} importer, used by #{package.name}, is not supported by autoproj-jenkins"
                 end
 
-                upstream_packages = compute_upstream_packages(package).
-                    find_all { |pkg_name| package_names.include?(pkg_name) }
-                upstream_jobs = upstream_packages.
-                    map { |pkg_name| job_name_from_package_name(pkg_name) }
+                upstream_jobs = compute_job_to_package_map(compute_upstream_packages(package), package_names)
+                downstream_jobs = compute_job_to_package_map(compute_downstream_packages(package, reverse_dependencies), package_names)
 
-                downstream_packages = compute_downstream_packages(package, reverse_dependencies)
-                downstream_jobs = downstream_packages.
-                    map { |pkg_name| job_name_from_package_name(pkg_name) if package_names.include?(pkg_name) }.
-                    compact
-
-                artifact_path =
+                prefix_relative_path =
                     if package.autobuild.srcdir == package.autobuild.prefix
                         Pathname.new(package.autobuild.srcdir).
                             relative_path_from(Pathname.new(ws.root_dir)).to_s
@@ -188,9 +192,8 @@ module Autoproj::Jenkins
                     vcs: package.vcs,
                     package_name: package.name,
                     package_dir: Pathname.new(package.autobuild.srcdir).relative_path_from(Pathname.new(ws.root_dir)).to_s,
-                    artifact_glob: "dev/#{artifact_path}/**/*",
+                    artifact_glob: "**/*",
                     job_name: job_name,
-                    upstream_packages: upstream_packages,
                     upstream_jobs: upstream_jobs,
                     downstream_jobs: downstream_jobs,
                     gemfile: gemfile,

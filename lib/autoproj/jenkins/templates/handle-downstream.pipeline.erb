@@ -1,8 +1,20 @@
-zip zipFile: 'artifacts/<%= job_name %>-prefix.zip', archive: true, glob: "<%= artifact_glob %>"
+def downstream_dir = "artifacts/downstream"
+dir(downstream_dir) { deleteDir() }
+dir(downstream_dir) { }
+
+def target_artifact_path = "${pwd()}/${downstream_dir}/<%= job_name %>-prefix.zip"
+def package_prefix_path = sh(script: "${autoproj} locate --prefix '<%= package_name %>'", returnStdout: true).trim()
+package_prefix_path = Paths.get(pwd()).relativize(Paths.get(package_prefix_path)).toString()
+dir(package_prefix_path) {
+    zip zipFile: target_artifact_path, glob: "<%= artifact_glob %>"
+}
+dir(downstream_dir) {
+    archiveArtifacts artifacts: "**/*"
+}
 
 def triggered_by_user = (currentBuild.rawBuild.getCause(hudson.model.Cause$UserIdCause) != null)
 if (triggered_by_user) {
-    <% downstream_jobs.each do |job_name| %>
+    <% downstream_jobs.each_key do |job_name| %>
     build job: "<%= job_name %>", wait: false
     <% end %>
 }

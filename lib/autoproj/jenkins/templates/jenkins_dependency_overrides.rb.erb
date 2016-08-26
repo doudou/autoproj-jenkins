@@ -1,5 +1,5 @@
 setup_package("<%= package_name %>") do |pkg|
-    [<%= upstream_packages.map { |pkg_name| "'#{pkg_name}'" }.join(", ") %>].each do |pkg_name|
-        pkg.depends_on pkg_name
-    end
+    <% upstream_jobs.each_value do |pkg_name| %>
+    pkg.depends_on "<%= pkg_name %>"
+    <% end %>
 end

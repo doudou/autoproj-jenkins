@@ -1,7 +1,7 @@
 node<%= "(label: 'master')" if dev %> {
     stage 'bootstrap'
     <%= render_template('bootstrap.pipeline', vcs: vcs, gemfile: gemfile, autoproj_install_path: autoproj_install_path) %>
-    def autoproj = "${pwd()}/dev/.autoproj/bin/autoproj"
+
     dir('dev') {
         stage 'checkout and update packages'
         sh "${autoproj} test enable"

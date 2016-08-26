@@ -18,3 +18,5 @@ dir('dev') {
     sh ".autoproj/bin/aup autoproj/ --force-reset"
 }
 
+def autoproj = "${pwd()}/dev/.autoproj/bin/autoproj"
+env.AUTOPROJ_CURRENT_ROOT = "${pwd()}/dev"
