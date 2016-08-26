@@ -1,23 +1,16 @@
-def upstream_jobs = [<%= upstream_jobs.each_key.map { |job_name| "'#{job_name}'" }.join(", ") %>]
-
-def isUpstreamOK(String jobName)
+def isUpstreamOK(jobName, buildId)
 {
     def job = Jenkins.instance.getItem(jobName)
     if (!job)
     {
         error("cannot find upstream job ${jobName}")
     }
-    if (job.isInQueue() || job.isBuilding())
+
+    def build = job.getBuild(buildId.toString())
+
+    def result = build.getResult()
+    if (result)
     {
-        return 'IN_PROGRESS'
-    }
-    else if (!job.getLastBuild())
-    {
-        return 'IN_PROGRESS'
-    }
-    else
-    {
-        def result = job.getLastBuild().getResult()
         if (result == Result.SUCCESS || result == Result.UNSTABLE)
         {
             return 'OK'
@@ -27,29 +20,110 @@ def isUpstreamOK(String jobName)
             return 'FAILED'
         }
     }
+    else
+    {
+        return 'IN_PROGRESS'
+    }
 }
 
-def wait_continue = true;
-while(wait_continue)
+def getTriggerBuild(currentBuild)
 {
-    wait_continue = false;
+    def triggerBuild = currentBuild.rawBuild.getCause(hudson.model.Cause$UpstreamCause)
+    if (triggerBuild) {
+        return [triggerBuild.getUpstreamProject(), triggerBuild.getUpstreamBuild()]
+    }
+}
 
-    // Iterate list -- NOTE: we cannot use groovy style or even modern java style iteration
-    for (int i = 0; i < upstream_jobs.size(); i++)
+def findBuildTriggeredBy(job, triggerJob, triggerBuild)
+{
+    def jobBuilds = job.getBuilds()
+    for (int buildIndex = 0; buildIndex < jobBuilds.size(); buildIndex++)
     {
-        def status = isUpstreamOK(upstream_jobs[i])
-        if (status == 'IN_PROGRESS')
+        def build = jobBuilds[buildIndex]
+        def buildCause = build.getCause(hudson.model.Cause$UpstreamCause)
+        if (buildCause)
         {
-            echo "waiting for job ${upstream_jobs[i]} to finish"
-            wait_continue = true
-            sleep time: 1, units: 'SECONDS'
-        }
-        else if (status == 'FAILED')
-        {
-            echo "${upstream_jobs[i]} did not finish successfully, aborting this build"
-            currentBuild.result = 'NOT_BUILT';
-            return;
+            def causeJob   = buildCause.getUpstreamProject()
+            def causeBuild = buildCause.getUpstreamBuild()
+            if (causeJob == triggerJob && causeBuild == triggerBuild)
+            {
+                return build.getNumber()
+            }
         }
     }
+}
+
+def getUpstreamBuilds(upstreamJobNames, triggerJob, triggerBuild)
+{
+    def upstreamBuilds = []
+
+    // Iterate list -- NOTE: we cannot use groovy style or even modern java style iteration
+    for (int i = 0; i < upstreamJobNames.size(); i++)
+    {
+        def jobName = upstreamJobNames[i]
+        if (jobName == triggerJob)
+        {
+            echo "upstream build: ${jobName}#${triggerBuild}"
+            upstreamBuilds << [jobName, triggerBuild]
+        }
+        else
+        {
+            def job = Jenkins.instance.getItem(jobName)
+            def matchingBuild = findBuildTriggeredBy(job, triggerJob, triggerBuild)
+            if (!matchingBuild)
+            {
+                echo "no build from ${jobName} has been triggered by ${triggerJob}#${triggerBuild}, using last successful build"
+                matchingBuild = job.getLastBuild().getNumber()
+            }
+            echo "upstream build: ${jobName}#${matchingBuild}"
+            upstreamBuilds << [jobName, matchingBuild]
+        }
+    }
+    return upstreamBuilds
+}
+
+def waitForUpstreamBuilds(upstreamBuilds)
+{
+    def waitContinue = true;
+    while(waitContinue)
+    {
+        waitContinue = false;
+
+        // Iterate list -- NOTE: we cannot use groovy style or even modern java style iteration
+        for (int i = 0; i < upstreamBuilds.size(); i++)
+        {
+            def upstreamJobName = upstreamBuilds[i][0]
+            def upstreamBuildId = upstreamBuilds[i][1]
+            def status = isUpstreamOK(upstreamJobName, upstreamBuildId)
+            if (status == 'IN_PROGRESS')
+            {
+                echo "waiting for job ${upstreamJobName}#${upstreamBuildId} to finish"
+                waitContinue = true
+                sleep time: 1, units: 'SECONDS'
+            }
+            else if (status == 'FAILED')
+            {
+                echo "${upstreamJobName}#${upstreamBuildId} did not finish successfully, aborting this build"
+                currentBuild.result = 'NOT_BUILT';
+                return false;
+            }
+        }
+    }
+    return true
+
+}
+
+def triggeredByUser = (currentBuild.rawBuild.getCause(hudson.model.Cause$UserIdCause) != null)
+def triggerBuild    = getTriggerBuild(currentBuild)
+
+def upstreamBuilds = []
+if (triggerBuild) {
+    upstreamBuilds = getUpstreamBuilds(
+        [<%= upstream_jobs.each_key.map { |job_name| "'#{job_name}'" }.join(", ") %>],
+        triggerBuild[0], triggerBuild[1])
+}
+
+if (!waitForUpstreamBuilds(upstreamBuilds)) {
+    return
 }
 

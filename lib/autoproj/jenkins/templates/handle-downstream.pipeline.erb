@@ -12,8 +12,7 @@ dir(downstream_dir) {
     archiveArtifacts artifacts: "**/*"
 }
 
-def triggered_by_user = (currentBuild.rawBuild.getCause(hudson.model.Cause$UserIdCause) != null)
-if (triggered_by_user) {
+if (triggeredByUser) { // Defined in handle-upstream.pipeline.erb
     <% downstream_jobs.each_key do |job_name| %>
     build job: "<%= job_name %>", wait: false
     <% end %>
