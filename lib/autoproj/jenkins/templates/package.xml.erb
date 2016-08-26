@@ -11,5 +11,13 @@
     <triggers/>
     <publishers/>
     <quietPeriod><%= quiet_period %></quietPeriod>
+    <jenkins.model.BuildDiscarderProperty>
+        <strategy class="hudson.tasks.LogRotator">
+            <daysToKeep>30</daysToKeep>
+            <numToKeep>-1</numToKeep>
+            <artifactDaysToKeep>7</artifactDaysToKeep>
+            <artifactNumToKeep>-1</artifactNumToKeep>
+        </strategy>
+    </jenkins.model.BuildDiscarderProperty>
 </flow-definition>
 
