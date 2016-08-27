@@ -3,9 +3,7 @@ dir(downstream_dir) { deleteDir() }
 dir(downstream_dir) { }
 
 def target_artifact_path = "${pwd()}/${downstream_dir}/<%= job_name %>-prefix.zip"
-def package_prefix_path = sh(script: "${autoproj} locate --no-cache --prefix '<%= package_name %>'", returnStdout: true).trim()
-package_prefix_path = Paths.get(pwd()).relativize(Paths.get(package_prefix_path)).toString()
-dir(package_prefix_path) {
+dir(packagePrefix) {
     zip zipFile: target_artifact_path, glob: "<%= artifact_glob %>"
 }
 dir(downstream_dir) {

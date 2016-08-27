@@ -10,6 +10,12 @@ node<%= "(label: 'master')" if dev %> {
     stage 'install upstream artifacts'
     <%= render_template('handle-upstream.pipeline', upstream_jobs: upstream_jobs) %>
 
+    def packagePrefix = sh(script: "${autoproj} locate --no-cache --prefix '<%= package_name %>'", returnStdout: true).trim()
+    packagePrefix = Paths.get(pwd()).relativize(Paths.get(packagePrefix)).toString()
+    if (fileExists("lastPrefix")) {
+        sh "mv lastPrefix '${packagePrefix}'"
+    }
+
     def jenkins_dependency_overrides = "<%= render_template 'jenkins_dependency_overrides.rb', escape: true, package_name: package_name, upstream_jobs: upstream_jobs %>"
     writeFile file: 'dev/autoproj/overrides.d/99_jenkins_dependency_overrides.rb',
         text: jenkins_dependency_overrides
@@ -37,7 +43,6 @@ node<%= "(label: 'master')" if dev %> {
 
     stage 'trigger dependencies'
     <%= render_template('handle-downstream.pipeline',
-                        package_name: package_name,
                         job_name: job_name,
                         artifact_glob: artifact_glob,
                         downstream_jobs: downstream_jobs) %>
@@ -65,4 +70,10 @@ node<%= "(label: 'master')" if dev %> {
     {
         currentBuild.result = 'UNSTABLE'
     }
+
+    // Move the current package prefix to a separate folder, to ensure that
+    // other workspaces don't have access to it. It's not strictly required,
+    // but is a good sanity check
+    dir('lastPrefix') { deleteDir() }
+    sh "mv '${packagePrefix}' lastPrefix"
 }
