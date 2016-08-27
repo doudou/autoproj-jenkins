@@ -1,13 +1,15 @@
-def downstream_dir = "artifacts/downstream"
-dir(downstream_dir) { deleteDir() }
-dir(downstream_dir) { }
+def downstreamDir = "artifacts/downstream"
+def fullPackagePrefix = "${pwd()}/${packagePrefix}"
+def targetArtifactPath = "${pwd()}/${downstreamDir}/<%= job_name %>-prefix.zip"
 
-def target_artifact_path = "${pwd()}/${downstream_dir}/<%= job_name %>-prefix.zip"
-dir(packagePrefix) {
-    zip zipFile: target_artifact_path, glob: "<%= artifact_glob %>"
+dir(downstreamDir) { deleteDir() }
+dir("${downstreamDir}/<%= job_name %>") {
+    sh "rsync '${fullPackagePrefix}/' './' -a --delete"
+    sh "${autoproj} jenkins relativize ./ '${fullWorkspaceDir}' '@WORKSPACE_ROOT@'"
+    zip zipFile: targetArtifactPath, glob: "<%= artifact_glob %>"
 }
-dir(downstream_dir) {
-    archiveArtifacts artifacts: "**/*"
+dir(downstreamDir) {
+    archiveArtifacts artifacts: "*.zip"
 }
 
 if (triggeredByUser) { // Defined in handle-upstream.pipeline.erb

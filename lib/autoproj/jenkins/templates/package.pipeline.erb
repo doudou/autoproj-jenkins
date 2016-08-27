@@ -4,6 +4,7 @@ stage 'waiting for upstream jobs to finish'
 
 node<%= "(label: 'master')" if dev %> {
     dir('dev/install/log') { deleteDir() }
+    def fullWorkspaceDir = pwd()
 
     stage 'bootstrap'
     <%= render_template('bootstrap.pipeline', vcs: buildconf_vcs, gemfile: gemfile, autoproj_install_path: autoproj_install_path) %>

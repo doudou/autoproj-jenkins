@@ -102,6 +102,17 @@ module Autoproj
                 end
                 ops.process(output_dir, *package_names, after: reference_time)
             end
+
+            desc 'relativize ROOT_DIR INPUT_TEXT OUTPUT_TEXT', 'replaces INPUT_TEXT by OUTPUT_TEXT in all files that can contain absolute paths'
+            def relativize(root_dir, input_text, output_text)
+                require 'autoproj/jenkins'
+                relativize = Autoproj::Jenkins::Relativize.new(Pathname.new(root_dir), input_text, output_text)
+                processed_paths = relativize.process
+                puts "modified #{processed_paths.size} file"
+                processed_paths.each do |p|
+                    puts "  #{p}"
+                end
+            end
         end
     end
 end

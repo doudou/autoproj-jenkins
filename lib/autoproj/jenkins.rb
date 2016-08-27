@@ -1,3 +1,4 @@
+require 'find'
 require 'pathname'
 require 'set'
 require 'jenkins_api_client'
@@ -8,6 +9,7 @@ require "autoproj/jenkins/exceptions"
 require "autoproj/jenkins/render_template"
 require "autoproj/jenkins/server"
 require "autoproj/jenkins/updater"
+require "autoproj/jenkins/relativize"
 
 module Autoproj
   module Jenkins
