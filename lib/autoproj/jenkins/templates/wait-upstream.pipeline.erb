@@ -73,7 +73,7 @@ def getUpstreamBuilds(upstreamJobNames, triggerJob, triggerBuild)
             if (!matchingBuild)
             {
                 echo "no build from ${jobName} has been triggered by ${triggerJob}#${triggerBuild}, using last successful build"
-                matchingBuild = job.getLastBuild().getNumber()
+                matchingBuild = job.getLastSuccessfulBuild().getNumber()
             }
             echo "upstream build: ${jobName}#${matchingBuild}"
             upstreamBuilds << [jobName, matchingBuild]
