@@ -8,9 +8,9 @@ node<%= "(label: 'master')" if dev %> {
     stage 'bootstrap'
     <%= render_template('bootstrap.pipeline', vcs: buildconf_vcs, gemfile: gemfile, autoproj_install_path: autoproj_install_path) %>
     stage 'install upstream artifacts'
-    <%= render_template('handle-upstream.pipeline', upstream_jobs: upstream_jobs) %>
+    <%= render_template('handle-upstream.pipeline', upstream_jobs: upstream_jobs, package_name: package_name) %>
 
-    def packagePrefix = sh(script: "${autoproj} locate --no-cache --prefix '<%= package_name %>'", returnStdout: true).trim()
+    def packagePrefix = packagePrefixes[0]
     packagePrefix = Paths.get(fullWorkspaceDir).relativize(Paths.get(packagePrefix)).toString()
     if (fileExists("lastPrefix")) {
         sh "mv lastPrefix '${packagePrefix}'"

@@ -10,10 +10,12 @@ dir(upstreamDir) {
     <% end %>
 }
 
+def packagePrefixes = sh(script: "${autoproj} locate --no-cache --prefix '<%= package_name %>' <%= upstream_jobs.values.map { |v| "'#{v}'" }.join(" ") %>", returnStdout: true).
+    split("\n")
 def upstreamPrefixDir = null
 
-<% upstream_jobs.each do |upstream_job_name, upstream_package_name| %>
-upstreamPrefixDir = sh(script: "${autoproj} locate --no-cache --prefix '<%= upstream_package_name %>'", returnStdout: true).trim()
+<% upstream_jobs.each_with_index do |(upstream_job_name, upstream_package_name), upstream_package_index| %>
+upstreamPrefixDir = packagePrefixes[<%= upstream_package_index + 1 %>]
 upstreamPrefixDir = Paths.get(fullWorkspaceDir).relativize(Paths.get(upstreamPrefixDir)).toString()
 
 dir("${upstreamDir}/<%= upstream_job_name %>") {
