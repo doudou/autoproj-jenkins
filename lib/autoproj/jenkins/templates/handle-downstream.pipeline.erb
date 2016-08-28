@@ -1,6 +1,6 @@
 def downstreamDir = "artifacts/downstream"
-def fullPackagePrefix = "${pwd()}/${packagePrefix}"
-def targetArtifactPath = "${pwd()}/${downstreamDir}/<%= job_name %>-prefix.zip"
+def fullPackagePrefix = "${fullWorkspaceDir}/${packagePrefix}"
+def targetArtifactPath = "${fullWorkspaceDir}/${downstreamDir}/<%= job_name %>-prefix.zip"
 
 dir(downstreamDir) { deleteDir() }
 dir("${downstreamDir}/<%= job_name %>") {

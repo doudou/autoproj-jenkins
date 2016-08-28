@@ -4,7 +4,6 @@ stage 'waiting for upstream jobs to finish'
 
 node<%= "(label: 'master')" if dev %> {
     dir('dev/install/log') { deleteDir() }
-    def fullWorkspaceDir = pwd()
 
     stage 'bootstrap'
     <%= render_template('bootstrap.pipeline', vcs: buildconf_vcs, gemfile: gemfile, autoproj_install_path: autoproj_install_path) %>
@@ -12,7 +11,7 @@ node<%= "(label: 'master')" if dev %> {
     <%= render_template('handle-upstream.pipeline', upstream_jobs: upstream_jobs) %>
 
     def packagePrefix = sh(script: "${autoproj} locate --no-cache --prefix '<%= package_name %>'", returnStdout: true).trim()
-    packagePrefix = Paths.get(pwd()).relativize(Paths.get(packagePrefix)).toString()
+    packagePrefix = Paths.get(fullWorkspaceDir).relativize(Paths.get(packagePrefix)).toString()
     if (fileExists("lastPrefix")) {
         sh "mv lastPrefix '${packagePrefix}'"
     }
@@ -49,9 +48,9 @@ node<%= "(label: 'master')" if dev %> {
                         downstream_jobs: downstream_jobs) %>
 
     stage 'tests'
-    def test_timestamp_path = "${pwd()}/test-timestamp"
+    def test_timestamp_path = "${fullWorkspaceDir}/test-timestamp"
     touch file: test_timestamp_path
-    def test_output_path    = "${pwd()}/test"
+    def test_output_path    = "${fullWorkspaceDir}/test"
     def autoproj_test_failed = false
     dir('dev')
     {

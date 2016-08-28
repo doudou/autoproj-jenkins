@@ -1,5 +1,5 @@
 def upstreamDir = "artifacts/upstream"
-def full_upstream_dir = "${pwd()}/${upstreamDir}"
+def fullUpstreamDir = "${fullWorkspaceDir}/${upstreamDir}"
 dir(upstreamDir) { deleteDir() }
 dir(upstreamDir) {
     <% upstream_jobs.each_key do |upstream_job_name| %>
@@ -14,14 +14,14 @@ def upstreamPrefixDir = null
 
 <% upstream_jobs.each do |upstream_job_name, upstream_package_name| %>
 upstreamPrefixDir = sh(script: "${autoproj} locate --no-cache --prefix '<%= upstream_package_name %>'", returnStdout: true).trim()
-upstreamPrefixDir = Paths.get(pwd()).relativize(Paths.get(upstreamPrefixDir)).toString()
+upstreamPrefixDir = Paths.get(fullWorkspaceDir).relativize(Paths.get(upstreamPrefixDir)).toString()
 
 dir("${upstreamDir}/<%= upstream_job_name %>") {
-    unzip zipFile: "${full_upstream_dir}/<%= upstream_job_name %>-prefix.zip"
+    unzip zipFile: "${fullUpstreamDir}/<%= upstream_job_name %>-prefix.zip"
     sh "${autoproj} jenkins relativize ./ '@WORKSPACE_ROOT@' '${fullWorkspaceDir}'"
 }
 dir(upstreamPrefixDir) {
-    sh "rsync '${full_upstream_dir}/<%= upstream_job_name %>/' './' --delete --recursive --safe-links --perms --checksum"
+    sh "rsync '${fullUpstreamDir}/<%= upstream_job_name %>/' './' --delete --recursive --safe-links --perms --checksum"
 }
 <% end %>
 
