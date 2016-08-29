@@ -13,7 +13,13 @@ module Autoproj
                 @updater = Autoproj::Jenkins::Updater.new(ws, server, job_prefix: job_prefix)
             end
 
-            def create_or_update_buildconf_job(*package_names, force: false, dev: false, credentials_id: nil)
+            def parse_git_credentials(credentials)
+                credentials.map do |git_url|
+                    Autoproj::Jenkins::Updater::GitCredential.parse(git_url)
+                end
+            end
+
+            def create_or_update_buildconf_job(*package_names, force: false, dev: false, credentials_id: nil, git_credentials: [])
                 initialize_and_load
 
                 if dev
@@ -30,10 +36,11 @@ module Autoproj
                 end
                 updater.create_or_update_buildconf_job(*source_packages, gemfile: gemfile,
                                                        autoproj_install_path: autoproj_install_path, dev: dev,
-                                                       credentials_id: credentials_id)
+                                                       credentials_id: credentials_id,
+                                                       git_credentials: parse_git_credentials(git_credentials))
             end
 
-            def add_or_update_packages(*package_names, dev: false)
+            def add_or_update_packages(*package_names, dev: false, git_credentials: [])
                 initialize_and_load
                 source_packages, _ = finalize_setup(package_names, ignore_non_imported_packages: false)
                 source_packages = source_packages.map do |package_name|
@@ -52,6 +59,7 @@ module Autoproj
                     *source_packages,
                     gemfile: gemfile,
                     autoproj_install_path: autoproj_install_path,
+                    git_credentials: parse_git_credentials(git_credentials),
                     dev: dev).
                     map(&:name)
             end

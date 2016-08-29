@@ -11,11 +11,13 @@ def config = "<%= render_template('buildconf-config.yml', vcs: vcs, escape: true
 writeFile file: 'seed.yml', text: config
 dir('dev') {
     sh "ruby ../autoproj_install --skip-stage2 --seed-config=../seed.yml --gems-path=/var/lib/jenkins/cache/gems --gemfile=../Gemfile"
+    <%= render_template('setup-git-credentials.pipeline', credentials: git_credentials) %>
     <%= render_template("import-#{vcs.type}.pipeline",
                         allow_unused: true,
                         package_dir: 'autoproj',
                         vcs: vcs,
                         package_name: 'autoproj/') %>
+    <%= render_template('setup-git-credentials.pipeline', credentials: git_credentials) %>
     sh ".autoproj/bin/aup autoproj/ --force-reset"
 }
 
