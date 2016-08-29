@@ -60,7 +60,7 @@ node<%= "(label: 'master')" if dev %> {
         try {
             sh "${autoproj} test enable '<%= package_name %>'"
             sh "${autoproj} osdeps '<%= package_name %>'"
-            sh "${autoproj} build --deps=f '<%= package_name %>'"
+            sh "${autoproj} build --deps=f '<%= package_name %>' -p1"
             sh "${autoproj} test -p=1 '<%= package_name %>'"
         }
         catch(err) { autoproj_test_failed = true }
