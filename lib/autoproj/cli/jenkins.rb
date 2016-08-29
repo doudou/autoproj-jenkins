@@ -30,7 +30,7 @@ module Autoproj
                     autoproj_install_path = nil
                 end
 
-                source_packages, _ = finalize_setup(package_names, ignore_non_imported_packages: false)
+                source_packages, _ = finalize_setup(package_names, non_imported_packages: nil)
                 source_packages = source_packages.map do |package_name|
                     ws.manifest.package_definition_by_name(package_name)
                 end
