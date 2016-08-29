@@ -10,6 +10,7 @@ require "autoproj/jenkins/render_template"
 require "autoproj/jenkins/server"
 require "autoproj/jenkins/updater"
 require "autoproj/jenkins/relativize"
+require "autoproj/jenkins/credentials"
 
 module Autoproj
   module Jenkins

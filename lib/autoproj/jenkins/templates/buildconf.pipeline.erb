@@ -1,26 +1,34 @@
 node<%= "(label: 'master')" if dev %> {
     stage 'bootstrap'
-    <%= render_template('bootstrap.pipeline', vcs: vcs, gemfile: gemfile, autoproj_install_path: autoproj_install_path, git_credentials: git_credentials) %>
+    <%= render_template('bootstrap.pipeline', vcs: vcs, gemfile: gemfile, autoproj_install_path: autoproj_install_path, vcs_credentials: vcs_credentials, indent: 4) %>
 
     dir('dev') {
         stage 'checkout and update packages'
         sh "${autoproj} test enable"
-        <%= render_template('setup-git-credentials.pipeline', credentials: git_credentials) %>
+        <%= render_template('setup-git-credentials.pipeline', credentials: vcs_credentials[:git], indent: 8) %>
         sh "${autoproj} update <%= packages.map { |pkg| "'#{pkg.name}'" }.join(" ") %> --force-reset -k"
 
         stage 'update package jobs and trigger them'
         def arg_packages = "<%= packages.map { |pkg| "'#{pkg.name}'" }.join(" ") %>"
         def arg_dev      = "<%= " --dev" if dev %>"
         def arg_job_prefix = "<%= " '--job-prefix=#{job_prefix}'" if !job_prefix.empty? %>"
-        def arg_git_credentials = "<%= " '--git-credentials=#{git_credentials.map { |c| "#{c.protocol}://#{c.host}" }.join(" ")}'" %>"
+        <%
+        arg_vcs_credentials = vcs_credentials.credentials.flat_map do |vcs_type, vcs_c|
+            vcs_c.map do |c|
+                "#{vcs_type}:#{c.protocol}://#{c.host}"
+            end
+        end.join(" ")
+        %>
+
+        def arg_vcs_credentials = "<%= " '--vcs-credentials=#{arg_vcs_credentials}'" %>"
         <% if credentials_id %>
         withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: '<%= credentials_id %>',
                           usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
             def credentials = " --username '${env.USERNAME}' --password '${env.PASSWORD}'"
-            sh "${autoproj} jenkins update${arg_dev}${arg_job_prefix} 'http://localhost:8080' ${arg_packages}${credentials}${arg_git_credentials}"
+            sh "${autoproj} jenkins update${arg_dev}${arg_job_prefix} 'http://localhost:8080' ${arg_packages}${credentials}${arg_vcs_credentials}"
         }
         <% else %>
-        sh "${autoproj} jenkins update${arg_dev}${arg_job_prefix} 'http://localhost:8080' ${arg_packages}${arg_git_credentials}"
+        sh "${autoproj} jenkins update${arg_dev}${arg_job_prefix} 'http://localhost:8080' ${arg_packages}${arg_vcs_credentials}"
         <% end %>
         <% job_names.each do |job_name| %>
         build job: "<%= job_name %>", wait: false

@@ -53,7 +53,7 @@ module Autoproj::Jenkins
         #   with --dev or not
         # @param [Array<Autoproj::PackageDefinition>] packages if non-empty,
         #   restrict operations to these packages and their dependencies
-        def update_buildconf_pipeline(*packages, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil, dev: false, credentials_id: nil, git_credentials: [])
+        def update_buildconf_pipeline(*packages, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil, dev: false, credentials_id: nil, vcs_credentials: Credentials.new)
             manifest_vcs = ws.manifest.vcs
             if manifest_vcs.local? || manifest_vcs.none?
                 raise ArgumentError, "cannot use Jenkins to build an autoproj buildconf that is not on a remotely acessible VCS"
@@ -71,7 +71,7 @@ module Autoproj::Jenkins
                 autoproj_install_path: autoproj_install_path,
                 job_prefix: job_prefix,
                 credentials_id: credentials_id,
-                git_credentials: git_credentials,
+                vcs_credentials: vcs_credentials,
                 dev: dev)
         end
 
@@ -84,7 +84,7 @@ module Autoproj::Jenkins
         #   within VMs
         # @param [Integer] quiet_period the job's quiet period, in seconds.
         #   Mostly used within autoproj-jenkins tests
-        def create_or_update_buildconf_job(*packages, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil, dev: false, quiet_period: 5, credentials_id: nil, git_credentials: [])
+        def create_or_update_buildconf_job(*packages, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil, dev: false, quiet_period: 5, credentials_id: nil, vcs_credentials: Credentials.new)
             job_name = "#{job_prefix}buildconf"
             if !server.has_job?(job_name)
                 create_buildconf_job(quiet_period: quiet_period)
@@ -94,7 +94,7 @@ module Autoproj::Jenkins
                 gemfile: gemfile,
                 autoproj_install_path: autoproj_install_path,
                 credentials_id: credentials_id,
-                git_credentials: git_credentials,
+                vcs_credentials: vcs_credentials,
                 dev: dev)
         end
 
@@ -160,19 +160,8 @@ module Autoproj::Jenkins
             result
         end
 
-        GitCredential = Struct.new :protocol, :host do
-            def self.parse(uri)
-                uri = URI.parse(uri)
-                new(uri.scheme, uri.host)
-            end
-
-            def jenkins_id
-                "autoproj-git-#{protocol}-#{host}"
-            end
-        end
-
         # Create jobs and dependencies to handle the given set of packages
-        def update(*packages, quiet_period: 5, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil, dev: false, git_credentials: [])
+        def update(*packages, quiet_period: 5, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil, dev: false, vcs_credentials: Credentials.new)
             reverse_dependencies = ws.manifest.compute_revdeps
 
             packages.each do |package|
@@ -212,7 +201,7 @@ module Autoproj::Jenkins
                     gemfile: gemfile,
                     autoproj_install_path: autoproj_install_path,
                     dev: dev,
-                    git_credentials: git_credentials)
+                    vcs_credentials: vcs_credentials)
             end
         end
     end

@@ -57,7 +57,7 @@ module Autoproj
             option :target_os, desc: "the autoproj definition for the target OS as name0,name1:version0,version1",
                 default: nil
             option :credentials_id, desc: "the credentials ID of the username/password credentials that autoproj-jenkins should use to access the jenkins CLI. Won't use any credentials if not given"
-            option :git_credentials, desc: 'list of URLs for which credentials should be provided (see documentation)',
+            option :vcs_credentials, desc: 'list of vcs_type:URLs for which credentials should be provided (see documentation)',
                 type: :array, default: []
             def init(url, *package_names)
                 require 'autoproj/cli/jenkins'
@@ -67,7 +67,7 @@ module Autoproj
                     *package_names,
                     credentials_id: options[:credentials_id],
                     force: options[:force],
-                    git_credentials: options[:git_credentials],
+                    vcs_credentials: options[:vcs_credentials],
                     dev: options[:dev])
                 if options[:trigger]
                     ops.trigger_buildconf_job
@@ -81,13 +81,13 @@ module Autoproj
             option :force, desc: 'ignore the current state, generate jobs as if nothing was ever done'
             option :dev, desc: 'assume that the jenkins instance is a development instance under vagrant and that autoproj-jenkins is made available as /opt/autoproj-jenkins',
                 type: :boolean, default: false
-            option :git_credentials, desc: 'list of URLs for which credentials should be provided (see documentation)',
+            option :vcs_credentials, desc: 'list of vcs_type:URLs for which credentials should be provided (see documentation)',
                 type: :array, default: []
             def update(url, *package_names)
                 require 'autoproj/cli/jenkins'
                 ops = create_ops(url)
                 Autoproj.report(silent: !options[:debug], debug: options[:debug]) do
-                    updated_packages = ops.add_or_update_packages(*package_names, dev: options[:dev], git_credentials: options[:git_credentials])
+                    updated_packages = ops.add_or_update_packages(*package_names, dev: options[:dev], vcs_credentials: options[:vcs_credentials])
                     if options[:trigger]
                         ops.trigger_packages(*updated_packages)
                     end

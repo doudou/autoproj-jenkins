@@ -6,9 +6,9 @@ node<%= "(label: 'master')" if dev %> {
     dir('dev/install/log') { deleteDir() }
 
     stage 'bootstrap'
-    <%= render_template('bootstrap.pipeline', vcs: buildconf_vcs, gemfile: gemfile, autoproj_install_path: autoproj_install_path, git_credentials: git_credentials) %>
+    <%= render_template('bootstrap.pipeline', vcs: buildconf_vcs, gemfile: gemfile, autoproj_install_path: autoproj_install_path, vcs_credentials: vcs_credentials, indent: 4) %>
     stage 'install upstream artifacts'
-    <%= render_template('handle-upstream.pipeline', upstream_jobs: upstream_jobs, package_name: package_name) %>
+    <%= render_template('handle-upstream.pipeline', upstream_jobs: upstream_jobs, package_name: package_name, indent: 4) %>
 
     def packagePrefix = packagePrefixes[0]
     packagePrefix = Paths.get(fullWorkspaceDir).relativize(Paths.get(packagePrefix)).toString()
@@ -22,12 +22,13 @@ node<%= "(label: 'master')" if dev %> {
 
     dir('dev') {
         stage 'prepare build'
-        <%= render_template('setup-git-credentials.pipeline', credentials: git_credentials) %>
         <%= render_template("import-#{vcs.type}.pipeline",
                             allow_unused: true,
                             package_dir: package_dir,
                             vcs: vcs,
-                            package_name: package_name) %>
+                            credentials: vcs_credentials.for(vcs),
+                            package_name: package_name,
+                            indent: 8) %>
         sh "${autoproj} test disable '<%= package_name %>'"
         sh "${autoproj} osdeps '<%= package_name %>' 'pkg-config'"
 
@@ -46,7 +47,8 @@ node<%= "(label: 'master')" if dev %> {
     <%= render_template('handle-downstream.pipeline',
                         job_name: job_name,
                         artifact_glob: artifact_glob,
-                        downstream_jobs: downstream_jobs) %>
+                        downstream_jobs: downstream_jobs,
+                        indent: 4) %>
 
     stage 'tests'
     def test_timestamp_path = "${fullWorkspaceDir}/test-timestamp"
