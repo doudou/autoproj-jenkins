@@ -9,8 +9,9 @@ module Autoproj::Jenkins
     # It ensures that the templates are restricted to use the parameters that
     # are provided to them
     class TemplateRenderingContext < BasicObject
-        def initialize(template_path, allow_unused: false, **parameters)
+        def initialize(template_path, allow_unused: false, indent: 0, **parameters)
             @allow_unused = allow_unused
+            @indent = indent
             @template_path = template_path
             @parameters = parameters
             @used_parameters = ::Set.new
@@ -26,13 +27,17 @@ module Autoproj::Jenkins
             end
         end
 
-        def render_template(path, escape: false, **parameters)
-            result = ::Autoproj::Jenkins.render_template(path, template_path: @template_path, **parameters)
+        def render_template(path, escape: false, indent: 0, **parameters)
+            result = ::Autoproj::Jenkins.render_template(path, template_path: @template_path, indent: indent, **parameters)
             @used_parameters.merge(parameters.keys)
             if escape
-                escape_to_groovy(result)
-            else result
+                result = escape_to_groovy(result)
             end
+
+            indent_string = " " * indent
+            # We assume that the ERB tag for render_template is indented
+            # properly
+            result.split("\n").join("\n#{indent_string}")
         end
 
         def read_and_escape_file(path)
