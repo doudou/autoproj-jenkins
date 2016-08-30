@@ -1,4 +1,11 @@
 module Autoproj::Jenkins
+    # Returns true if the given VCS type is supported
+    #
+    # @param [#to_s] vcs the VCS type (e.g. 'git')
+    def self.vcs_supported?(vcs)
+        Autoproj::Jenkins.has_template?("import-#{vcs}.pipeline")
+    end
+
     # Update a jenkins server configuration from an autoproj workspace
     class Updater
         # The autoproj workspace
@@ -174,7 +181,7 @@ module Autoproj::Jenkins
             package_names = packages.map(&:name).to_set
             packages.each do |package|
                 job_name = job_name_from_package_name(package.name)
-                if !Autoproj::Jenkins.has_template?("import-#{package.vcs.type}.pipeline")
+                if !Autoproj::Jenkins.vcs_supported?(package.vcs.type)
                     raise UnhandledVCS, "the #{package.vcs.type} importer, used by #{package.name}, is not supported by autoproj-jenkins"
                 end
 

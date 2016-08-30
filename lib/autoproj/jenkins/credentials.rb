@@ -26,6 +26,11 @@ module Autoproj::Jenkins
         # @return [Credential]
         def self.parse(string)
             vcs, *uri = string.split(':')
+            if !vcs || vcs.empty? || uri.empty?
+                raise ArgumentError, "expected VCS:URL but got #{string}"
+            elsif !Autoproj::Jenkins.vcs_supported?(vcs)
+                raise UnhandledVCS, "#{vcs} is not a supported VCS"
+            end
             uri = URI.parse(uri.join(':'))
             Credential.new(vcs.to_sym, uri.scheme, uri.host)
         end
