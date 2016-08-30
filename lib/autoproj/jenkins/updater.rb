@@ -168,6 +168,9 @@ module Autoproj::Jenkins
         end
 
         # Create jobs and dependencies to handle the given set of packages
+        #
+        # @return [Array<String>] the list of names of the jobs that have been
+        #   created/updated
         def update(*packages, quiet_period: 5, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil, dev: false, vcs_credentials: Credentials.new)
             reverse_dependencies = ws.manifest.compute_revdeps
 
@@ -179,7 +182,7 @@ module Autoproj::Jenkins
             end
 
             package_names = packages.map(&:name).to_set
-            packages.each do |package|
+            packages.map do |package|
                 job_name = job_name_from_package_name(package.name)
                 if !Autoproj::Jenkins.vcs_supported?(package.vcs.type)
                     raise UnhandledVCS, "the #{package.vcs.type} importer, used by #{package.name}, is not supported by autoproj-jenkins"
@@ -209,6 +212,8 @@ module Autoproj::Jenkins
                     autoproj_install_path: autoproj_install_path,
                     dev: dev,
                     vcs_credentials: vcs_credentials)
+
+                job_name
             end
         end
     end

@@ -76,8 +76,6 @@ module Autoproj
 
 
             desc 'update [PACKAGE_NAMES]', 'add the following package and its dependencies to the jenkins build'
-            option :trigger, desc: 'trigger the packages once updated',
-                type: :boolean, default: false
             option :force, desc: 'ignore the current state, generate jobs as if nothing was ever done'
             option :dev, desc: 'assume that the jenkins instance is a development instance under vagrant and that autoproj-jenkins is made available as /opt/autoproj-jenkins',
                 type: :boolean, default: false
@@ -87,9 +85,9 @@ module Autoproj
                 require 'autoproj/cli/jenkins'
                 ops = create_ops(url)
                 Autoproj.report(silent: !options[:debug], debug: options[:debug]) do
-                    updated_packages = ops.add_or_update_packages(*package_names, dev: options[:dev], vcs_credentials: options[:vcs_credentials])
-                    if options[:trigger]
-                        ops.trigger_packages(*updated_packages)
+                    updated_jobs = ops.add_or_update_packages(*package_names, dev: options[:dev], vcs_credentials: options[:vcs_credentials])
+                    updated_jobs.sort.each do |job_name|
+                        puts job_name
                     end
                 end
             end

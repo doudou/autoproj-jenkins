@@ -63,8 +63,7 @@ module Autoproj
                     gemfile: gemfile,
                     autoproj_install_path: autoproj_install_path,
                     vcs_credentials: parse_vcs_credentials(vcs_credentials),
-                    dev: dev).
-                    map(&:name)
+                    dev: dev)
             end
 
             # Returns the "roots" in the trigger graph

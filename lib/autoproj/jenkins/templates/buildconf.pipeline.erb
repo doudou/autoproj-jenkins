@@ -22,17 +22,19 @@ node<%= "(label: 'master')" if dev %> {
 
         def arg_vcs_credentials = "<%= " '--vcs-credentials=#{arg_vcs_credentials}'" %>"
         <% if credentials_id %>
-        withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: '<%= credentials_id %>',
+        def jobNames = withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: '<%= credentials_id %>',
                           usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
             def credentials = " --username '${env.USERNAME}' --password '${env.PASSWORD}'"
-            sh "${autoproj} jenkins update${arg_dev}${arg_job_prefix} 'http://localhost:8080' ${arg_packages}${credentials}${arg_vcs_credentials}"
+            sh(script: "${autoproj} jenkins update${arg_dev}${arg_job_prefix} 'http://localhost:8080' ${arg_packages}${credentials}${arg_vcs_credentials}", returnStdout: true).split("\n")
         }
         <% else %>
-        sh "${autoproj} jenkins update${arg_dev}${arg_job_prefix} 'http://localhost:8080' ${arg_packages}${arg_vcs_credentials}"
+        def jobNames = sh(
+            script: "${autoproj} jenkins update${arg_dev}${arg_job_prefix} 'http://localhost:8080' ${arg_packages}${arg_vcs_credentials}",
+            returnStdout: true).split("\n")
         <% end %>
-        <% job_names.each do |job_name| %>
-        build job: "<%= job_name %>", wait: false
-        <% end %>
+        for (job_name in jobNames) {
+            build job: job_name, wait: false
+        }
     }
 }
 
