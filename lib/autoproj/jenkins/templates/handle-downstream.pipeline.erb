@@ -1,10 +1,9 @@
 def downstreamDir = "artifacts/downstream"
-def fullPackagePrefix = "${fullWorkspaceDir}/${packagePrefix}"
 def targetArtifactPath = "${fullWorkspaceDir}/${downstreamDir}/<%= job_name %>-prefix.zip"
 
 dir(downstreamDir) { deleteDir() }
 dir("${downstreamDir}/<%= job_name %>") {
-    sh "rsync '${fullPackagePrefix}/' './' -a --delete"
+    sh "rsync '${jobPackagePrefix}/' './' -a --delete"
     sh "${autoproj} jenkins relativize ./ '${fullWorkspaceDir}' '@WORKSPACE_ROOT@'"
     zip zipFile: targetArtifactPath, glob: "<%= artifact_glob %>"
 }

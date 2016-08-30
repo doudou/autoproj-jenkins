@@ -66,14 +66,9 @@ module Autoproj::Jenkins
                 raise ArgumentError, "cannot use Jenkins to build an autoproj buildconf that is not on a remotely acessible VCS"
             end
 
-            job_names = packages.
-                map { |pkg| job_name_from_package_name(pkg.name) }.
-                compact
-
             server.update_job_pipeline("#{job_prefix}buildconf", 'buildconf.pipeline',
                 vcs: manifest_vcs,
                 packages: packages,
-                job_names: job_names,
                 gemfile: gemfile,
                 autoproj_install_path: autoproj_install_path,
                 job_prefix: job_prefix,

@@ -1,6 +1,11 @@
 import java.nio.file.Paths
+
+def jobPackageName = "<%= package_name %>"
+def upstreamJobNames = [<%= upstream_jobs.each_key.map { |job_name| "'#{job_name}'" }.join(", ") %>]
+def upstreamPackageNames = [<%= upstream_jobs.each_value.map { |package_name| "'#{package_name}'" }.join(", ") %>]
+
 stage 'waiting for upstream jobs to finish'
-<%= render_template('wait-upstream.pipeline', upstream_jobs: upstream_jobs) %>
+<%= render_template('wait-upstream.pipeline') %>
 
 node<%= "(label: 'master')" if dev %> {
     dir('dev/install/log') { deleteDir() }
@@ -8,12 +13,21 @@ node<%= "(label: 'master')" if dev %> {
     stage 'bootstrap'
     <%= render_template('bootstrap.pipeline', vcs: buildconf_vcs, gemfile: gemfile, autoproj_install_path: autoproj_install_path, vcs_credentials: vcs_credentials, indent: 4) %>
     stage 'install upstream artifacts'
-    <%= render_template('handle-upstream.pipeline', upstream_jobs: upstream_jobs, package_name: package_name, indent: 4) %>
 
-    def packagePrefix = packagePrefixes[0]
-    packagePrefix = Paths.get(fullWorkspaceDir).relativize(Paths.get(packagePrefix)).toString()
+    def upstreamDir = "artifacts/upstream"
+    def packagePrefixes = sh(script: "${autoproj} locate --no-cache --prefix '${jobPackageName}' ${upstreamPackageNames.join(" ")}", returnStdout: true).
+    split("\n")
+
+    def jobPackagePrefix = packagePrefixes[0]
+    def upstreamPackagePrefixes = packagePrefixes.tail()
+
+    parallel(makeUpstreamArtifactImporters(
+            autoproj, fullWorkspaceDir, upstreamDir,
+            upstreamJobNames, upstreamPackagePrefixes, upstreamBuilds)
+    )
+
     if (fileExists("lastPrefix")) {
-        sh "mv lastPrefix '${packagePrefix}'"
+        sh "mv lastPrefix '${jobPackagePrefix}'"
     }
 
     def jenkins_dependency_overrides = "<%= render_template 'jenkins_dependency_overrides.rb', escape: true, package_name: package_name, upstream_jobs: upstream_jobs %>"
@@ -78,5 +92,6 @@ node<%= "(label: 'master')" if dev %> {
     // other workspaces don't have access to it. It's not strictly required,
     // but is a good sanity check
     dir('lastPrefix') { deleteDir() }
-    sh "mv '${packagePrefix}' lastPrefix"
+    sh "mv '${jobPackagePrefix}' lastPrefix"
 }
+

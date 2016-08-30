@@ -37,9 +37,8 @@ def getTriggerBuild(currentBuild)
 def findBuildTriggeredBy(job, triggerJob, triggerBuild)
 {
     def jobBuilds = job.getBuilds()
-    for (int buildIndex = 0; buildIndex < jobBuilds.size(); buildIndex++)
+    for (build in jobBuilds)
     {
-        def build = jobBuilds[buildIndex]
         def buildCause = build.getCause(hudson.model.Cause$UpstreamCause)
         if (buildCause)
         {
@@ -58,9 +57,8 @@ def getUpstreamBuilds(upstreamJobNames, triggerJob, triggerBuild)
     def upstreamBuilds = []
 
     // Iterate list -- NOTE: we cannot use groovy style or even modern java style iteration
-    for (int i = 0; i < upstreamJobNames.size(); i++)
+    for (jobName in upstreamJobNames)
     {
-        def jobName = upstreamJobNames[i]
         if (jobName == triggerJob)
         {
             echo "upstream build: ${jobName}#${triggerBuild}"
@@ -90,10 +88,9 @@ def waitForUpstreamBuilds(upstreamBuilds)
         waitContinue = false;
 
         // Iterate list -- NOTE: we cannot use groovy style or even modern java style iteration
-        for (int i = 0; i < upstreamBuilds.size(); i++)
-        {
-            def upstreamJobName = upstreamBuilds[i][0]
-            def upstreamBuildId = upstreamBuilds[i][1]
+        for(entry in upstreamBuilds) {
+            def upstreamJobName = entry[0]
+            def upstreamBuildId = entry[1]
             def status = isUpstreamOK(upstreamJobName, upstreamBuildId)
             if (status == 'IN_PROGRESS')
             {
@@ -113,14 +110,44 @@ def waitForUpstreamBuilds(upstreamBuilds)
 
 }
 
+def makeUpstreamArtifactImporters(autoproj, fullWorkspaceDir, upstreamDir,
+    upstreamJobNames, upstreamPrefixes, upstreamBuilds)
+{
+    def fullUpstreamDir = "${fullWorkspaceDir}/${upstreamDir}"
+    dir(upstreamDir) { deleteDir() }
+
+    def upstreamArtifactImporters = [:]
+    for (jobIndex = 0; jobIndex < upstreamJobNames.size(); ++jobIndex) {
+        def jobName        = upstreamJobNames[jobIndex]
+        def fullPrefix     = upstreamPrefixes[jobIndex]
+        def buildId        = upstreamBuilds[jobIndex][1]
+        def relativePrefix = Paths.get(fullWorkspaceDir).relativize(Paths.get(fullPrefix)).toString()
+        upstreamArtifactImporters[jobName] = {
+            dir(upstreamDir) {
+                step ([$class: 'CopyArtifact',
+                    projectName: jobName,
+                    filter: "${jobName}-prefix.zip",
+                    selector: [$class: 'SpecificBuildSelector', buildNumber: buildId.toString()]])
+                dir(jobName) {
+                    unzip zipFile: "${fullUpstreamDir}/${jobName}-prefix.zip"
+                    sh "${autoproj} jenkins relativize ./ '@WORKSPACE_ROOT@' '${fullWorkspaceDir}'"
+                }
+            }
+            dir(relativePrefix) {
+                sh "rsync '${fullUpstreamDir}/${jobName}/' './' --delete --recursive --safe-links --perms --checksum"
+            }
+        }
+    }
+
+    return upstreamArtifactImporters
+}
+
 def triggeredByUser = (currentBuild.rawBuild.getCause(hudson.model.Cause$UserIdCause) != null)
 def triggerBuild    = getTriggerBuild(currentBuild)
 
-def upstreamBuilds = []
+def upstreamBuilds = [:]
 if (triggerBuild) {
-    upstreamBuilds = getUpstreamBuilds(
-        [<%= upstream_jobs.each_key.map { |job_name| "'#{job_name}'" }.join(", ") %>],
-        triggerBuild[0], triggerBuild[1])
+    upstreamBuilds = getUpstreamBuilds(upstreamJobNames, triggerBuild[0], triggerBuild[1])
 }
 
 if (!waitForUpstreamBuilds(upstreamBuilds)) {
