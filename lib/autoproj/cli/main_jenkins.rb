@@ -40,7 +40,7 @@ module Autoproj
                     end
                     ws = Autoproj::Workspace.default(**workspace_options)
 
-                    puts "connecting to jenkins '#{url}' with prefix '#{options[:prefix]}'"
+                    STDERR.puts "connecting to jenkins '#{url}' with prefix '#{options[:prefix]}'"
                     Jenkins.new(ws,
                                 job_prefix: options[:job_prefix],
                                 server_url: url,

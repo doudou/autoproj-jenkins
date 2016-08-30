@@ -12,7 +12,7 @@ module Autoproj::Jenkins
         attr_reader :jobs
 
         def initialize(**options)
-            @client = JenkinsApi::Client.new(**options)
+            @client = JenkinsApi::Client.new(log_location: STDERR, **options)
             @jobs = JenkinsApi::Client::Job.new(client)
         end
 
