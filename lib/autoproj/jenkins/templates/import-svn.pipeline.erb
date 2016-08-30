@@ -1,0 +1,5 @@
+dir('<%= package_dir %>') {
+    <% raise "SVN credentials are not supported at the moment" if credentials %>
+    svn url: '<%= vcs.url %>'
+}
+
