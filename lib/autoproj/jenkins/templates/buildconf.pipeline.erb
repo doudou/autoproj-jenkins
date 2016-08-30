@@ -3,13 +3,14 @@ node<%= "(label: 'master')" if dev %> {
     <%= render_template('bootstrap.pipeline', vcs: vcs, gemfile: gemfile, autoproj_install_path: autoproj_install_path, vcs_credentials: vcs_credentials, indent: 4) %>
 
     dir('dev') {
+        def arg_packages = "<%= package_names.map { |name| "'#{name}'" }.join(" ") %>"
+
         stage 'checkout and update packages'
         sh "${autoproj} test enable"
         <%= render_template('setup-git-credentials.pipeline', credentials: vcs_credentials[:git], indent: 8) %>
-        sh "${autoproj} update <%= packages.map { |pkg| "'#{pkg.name}'" }.join(" ") %> --force-reset -k"
+        sh "${autoproj} update ${arg_packages} --force-reset -k"
 
         stage 'update package jobs and trigger them'
-        def arg_packages = "<%= packages.map { |pkg| "'#{pkg.name}'" }.join(" ") %>"
         def arg_dev      = "<%= " --dev" if dev %>"
         def arg_job_prefix = "<%= " '--job-prefix=#{job_prefix}'" if !job_prefix.empty? %>"
         <% if vcs_credentials.empty?  %>
