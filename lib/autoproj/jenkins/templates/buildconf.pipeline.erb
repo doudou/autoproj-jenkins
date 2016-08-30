@@ -12,15 +12,17 @@ node<%= "(label: 'master')" if dev %> {
         def arg_packages = "<%= packages.map { |pkg| "'#{pkg.name}'" }.join(" ") %>"
         def arg_dev      = "<%= " --dev" if dev %>"
         def arg_job_prefix = "<%= " '--job-prefix=#{job_prefix}'" if !job_prefix.empty? %>"
-        <%
-        arg_vcs_credentials = vcs_credentials.credentials.flat_map do |vcs_type, vcs_c|
-            vcs_c.map do |c|
-                "#{vcs_type}:#{c.protocol}://#{c.host}"
-            end
-        end.join(" ")
-        %>
+        <% if vcs_credentials.empty?  %>
+        def arg_vcs_credentials = ""
+        <% else %>
+            <% arg_vcs_credentials = vcs_credentials.credentials.flat_map do |vcs_type, vcs_c|
+                  vcs_c.map do |c|
+                      "#{vcs_type}:#{c.protocol}://#{c.host}"
+                  end
+               end.join(" ") %>
+            def arg_vcs_credentials = " '--vcs-credentials=<%= arg_vcs_credentials %>'"
+        <% end %>
 
-        def arg_vcs_credentials = "<%= " '--vcs-credentials=#{arg_vcs_credentials}'" %>"
         <% if credentials_id %>
         def jobNames = withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: '<%= credentials_id %>',
                           usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {

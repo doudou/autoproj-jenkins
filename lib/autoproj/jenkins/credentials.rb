@@ -41,6 +41,10 @@ module Autoproj::Jenkins
             @credentials = Hash.new
         end
 
+        def empty?
+            credentials.empty?
+        end
+
         def [](vcs)
             credentials[vcs.to_sym] || Array.new
         end
