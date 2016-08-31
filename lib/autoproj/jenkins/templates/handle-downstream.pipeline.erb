@@ -9,6 +9,7 @@ dir("${downstreamDir}/<%= job_name %>") {
 }
 dir(downstreamDir) {
     archiveArtifacts artifacts: "*.zip"
+    deleteDir()
 }
 
 if (triggeredByUser) { // Defined in handle-upstream.pipeline.erb

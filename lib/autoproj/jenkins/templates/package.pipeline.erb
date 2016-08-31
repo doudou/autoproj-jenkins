@@ -25,6 +25,8 @@ node<%= "(label: 'master')" if dev %> {
             autoproj, fullWorkspaceDir, upstreamDir,
             upstreamJobNames, upstreamPackagePrefixes, upstreamBuilds)
     )
+    // We don't need the upstream artifacts anymore, clear some disk space
+    dir(upstreamDir) { deleteDir() }
 
     if (fileExists("lastPrefix")) {
         sh "mv lastPrefix '${jobPackagePrefix}'"
