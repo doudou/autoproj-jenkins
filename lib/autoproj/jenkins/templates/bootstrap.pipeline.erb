@@ -12,6 +12,7 @@ writeFile file: 'seed.yml', text: config
 dir('dev') {
     sh "ruby ../autoproj_install --skip-stage2 --seed-config=../seed.yml --gems-path=/var/lib/jenkins/cache/gems --gemfile=../Gemfile"
     <%= render_template("import-#{vcs.type}.pipeline",
+                        patch: false,
                         allow_unused: true,
                         package_dir: 'autoproj',
                         vcs: vcs,

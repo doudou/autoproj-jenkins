@@ -37,6 +37,7 @@ node<%= "(label: 'master')" if dev %> {
     dir('dev') {
         stage 'prepare build'
         <%= render_template("import-#{vcs.type}.pipeline",
+                            patch: true,
                             allow_unused: true,
                             package_dir: package_dir,
                             vcs: vcs,

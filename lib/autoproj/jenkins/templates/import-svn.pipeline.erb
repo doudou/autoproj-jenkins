@@ -1,5 +1,13 @@
 dir('<%= package_dir %>') {
     <% raise "SVN credentials are not supported at the moment" if credentials %>
+    <% if patch %>
+    if (fileExists('.svn')) {
+        sh "${autoproj} unpatch ."
+    }
+    <% end %>
     svn url: '<%= vcs.url %>'
+    <% if patch %>
+    sh "${autoproj} patch ."
+    <% end %>
 }
 
