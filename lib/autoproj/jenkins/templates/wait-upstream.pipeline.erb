@@ -70,7 +70,12 @@ def getUpstreamBuilds(upstreamJobNames, triggerJob, triggerBuild)
             def matchingBuild = findBuildTriggeredBy(job, triggerJob, triggerBuild)
             if (!matchingBuild)
             {
-                echo "no build from ${jobName} has been triggered by ${triggerJob}#${triggerBuild}, using last successful build"
+                if (triggerJob) {
+                    echo "no build from ${jobName} has been triggered by ${triggerJob}#${triggerBuild}, using last successful build"
+                }
+                else {
+                    echo "manual build trigger, using last successful build for ${jobName}"
+                }
                 matchingBuild = job.getLastSuccessfulBuild().getNumber()
             }
             echo "upstream build: ${jobName}#${matchingBuild}"
@@ -144,11 +149,10 @@ def makeUpstreamArtifactImporters(autoproj, fullWorkspaceDir, upstreamDir,
 
 def triggeredByUser = (currentBuild.rawBuild.getCause(hudson.model.Cause$UserIdCause) != null)
 def triggerBuild    = getTriggerBuild(currentBuild)
-
-def upstreamBuilds = [:]
-if (triggerBuild) {
-    upstreamBuilds = getUpstreamBuilds(upstreamJobNames, triggerBuild[0], triggerBuild[1])
+if (!triggerBuild) {
+    triggerBuild = [null, null]
 }
+def upstreamBuilds = getUpstreamBuilds(upstreamJobNames, triggerBuild[0], triggerBuild[1])
 
 if (!waitForUpstreamBuilds(upstreamBuilds)) {
     return
