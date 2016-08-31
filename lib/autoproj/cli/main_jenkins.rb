@@ -92,7 +92,8 @@ module Autoproj
                 end
             end
             
-            desc 'postprocess-tests OUTPUT_DIR [PACKAGE_NAME]', 'postprocesses test result formatted in various formats to convert them into the JUnit XML format understood by Jenkins'
+            desc 'postprocess-tests OUTPUT_DIR [PACKAGE_NAME]', 'postprocesses test result formatted in various formats to convert them into the JUnit XML format understood by Jenkins',
+                hide: true
             option :after, desc: "if provided, any report file that is older than this file will be ignored",
                 default: nil
             def postprocess_tests(output_dir, *package_names)
@@ -104,7 +105,8 @@ module Autoproj
                 ops.process(output_dir, *package_names, after: reference_time)
             end
 
-            desc 'relativize ROOT_DIR INPUT_TEXT OUTPUT_TEXT', 'replaces INPUT_TEXT by OUTPUT_TEXT in all files that can contain absolute paths'
+            desc 'relativize ROOT_DIR INPUT_TEXT OUTPUT_TEXT', 'replaces INPUT_TEXT by OUTPUT_TEXT in all files that can contain absolute paths',
+                hide: true
             def relativize(root_dir, input_text, output_text)
                 require 'autoproj/jenkins'
                 relativize = Autoproj::Jenkins::Relativize.new(Pathname.new(root_dir), input_text, output_text)
