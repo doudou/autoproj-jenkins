@@ -166,7 +166,7 @@ module Autoproj::Jenkins
         #
         # @return [Array<String>] the list of names of the jobs that have been
         #   created/updated
-        def update(*packages, quiet_period: 5, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil, dev: false, vcs_credentials: Credentials.new)
+        def update(*packages, quiet_period: 5, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil, vcs_credentials: Credentials.new)
             reverse_dependencies = ws.manifest.compute_revdeps
 
             packages.each do |package|
@@ -205,7 +205,6 @@ module Autoproj::Jenkins
                     downstream_jobs: downstream_jobs,
                     gemfile: gemfile,
                     autoproj_install_path: autoproj_install_path,
-                    dev: dev,
                     vcs_credentials: vcs_credentials)
 
                 job_name

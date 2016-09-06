@@ -59,8 +59,7 @@ module Autoproj
                     *source_packages,
                     gemfile: gemfile,
                     autoproj_install_path: autoproj_install_path,
-                    vcs_credentials: parse_vcs_credentials(vcs_credentials),
-                    dev: dev)
+                    vcs_credentials: parse_vcs_credentials(vcs_credentials))
             end
 
             # Returns the "roots" in the trigger graph
