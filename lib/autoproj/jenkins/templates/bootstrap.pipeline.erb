@@ -10,7 +10,7 @@ writeFile file: 'Gemfile', text: gemfile
 def config = "<%= render_template('buildconf-config.yml', vcs: vcs, escape: true) %>"
 writeFile file: 'seed.yml', text: config
 dir('dev') {
-    sh "ruby ../autoproj_install --skip-stage2 --seed-config=../seed.yml --gems-path=/var/lib/jenkins/cache/gems --gemfile=../Gemfile"
+    sh "ruby ../autoproj_install --skip-stage2 --seed-config=../seed.yml --gems-path=${env.JENKINS_HOME}/cache/gems --gemfile=../Gemfile"
     <%= render_template("import-#{vcs.type}.pipeline",
                         patch: false,
                         allow_unused: true,

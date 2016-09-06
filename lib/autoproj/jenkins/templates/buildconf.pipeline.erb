@@ -28,7 +28,7 @@ node(label: 'autoproj-jenkins') {
         def jobNames = withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: '<%= credentials_id %>',
                           usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
             def credentials = " --username '${env.USERNAME}' --password '${env.PASSWORD}'"
-            sh(script: "${autoproj} jenkins update${arg_dev}${arg_job_prefix} 'http://localhost:8080' ${arg_packages}${credentials}${arg_vcs_credentials}", returnStdout: true).split("\n")
+            sh(script: "${autoproj} jenkins update${arg_dev}${arg_job_prefix} '${env.JENKINS_URL}' ${arg_packages}${credentials}${arg_vcs_credentials}", returnStdout: true).split("\n")
         }
         <% else %>
         def jobNames = sh(
