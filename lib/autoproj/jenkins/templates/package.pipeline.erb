@@ -7,7 +7,7 @@ def upstreamPackageNames = [<%= upstream_jobs.each_value.map { |package_name| "'
 stage 'waiting for upstream jobs to finish'
 <%= render_template('wait-upstream.pipeline') %>
 
-node<%= "(label: 'master')" if dev %> {
+node(label: 'autoproj-jenkins') {
     dir('dev/install/log') { deleteDir() }
 
     stage 'bootstrap'

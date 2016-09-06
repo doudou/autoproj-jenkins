@@ -1,4 +1,4 @@
-node<%= "(label: 'master')" if dev %> {
+node(label: 'autoproj-jenkins') {
     stage 'bootstrap'
     <%= render_template('bootstrap.pipeline', vcs: vcs, gemfile: gemfile, autoproj_install_path: autoproj_install_path, vcs_credentials: vcs_credentials, indent: 4) %>
 
