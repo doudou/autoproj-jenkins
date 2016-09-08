@@ -56,7 +56,8 @@ module Autoproj
                 type: :boolean, default: false
             option :target_os, desc: "the autoproj definition for the target OS as name0,name1:version0,version1",
                 default: nil
-            option :credentials_id, desc: "the credentials ID of the username/password credentials that autoproj-jenkins should use to access the jenkins CLI. Won't use any credentials if not given"
+            option :credentials_id, desc: "the credentials ID of the username/password credentials that autoproj-jenkins should use to access the jenkins CLI",
+                default: 'autoproj-jenkins-cli'
             option :vcs_credentials, desc: 'list of vcs_type:URLs for which credentials should be provided (see documentation)',
                 type: :array, default: []
             def init(url, *package_names)
