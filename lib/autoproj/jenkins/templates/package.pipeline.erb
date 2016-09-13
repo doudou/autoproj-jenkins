@@ -85,7 +85,9 @@ node(label: 'autoproj-jenkins') {
         try { sh "${autoproj} jenkins postprocess-tests --after=${test_timestamp_path} ${test_output_path} '<%= package_name %>'" }
         catch(err) { autoproj_test_failed = true }
     }
-    junit allowEmptyResults: true, keepLongStdio: true, testResults: "test/*.xml"
+    try { junit allowEmptyResults: true, keepLongStdio: true, testResults: "test/*.xml" }
+    catch(err) { autoproj_test_failed = true }
+
     if (autoproj_test_failed)
     {
         currentBuild.result = 'UNSTABLE'
