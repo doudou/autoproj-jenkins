@@ -151,7 +151,7 @@ module Autoproj::Jenkins
                 job_name = job_name_from_package_name(package.name)
                 server.create_or_reset_job(
                     job_name, 'package.xml',
-                    job_name: job_name, quiet_period: quiet_period)
+                    quiet_period: quiet_period)
             end
 
             package_names = packages.map(&:name).to_set
