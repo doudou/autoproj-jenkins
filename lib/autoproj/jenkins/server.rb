@@ -27,6 +27,28 @@ module Autoproj::Jenkins
             jobs.create(job_name, xml)
         end
 
+        # Reset the configuration of an existing job
+        # 
+        # @param [String] job_name the name of the new job
+        # @param [String] template the name of the template
+        # @param [Hash] parameters parameters for the template rendering
+        # @raise (see Autoproj::Jenkins.render_template)
+        def reset_job(job_name, template, **parameters)
+            xml = Autoproj::Jenkins.render_template(template, **parameters)
+            jobs.update(job_name, xml)
+        end
+
+        # Either create or reset a job, depending on whether it already exists
+        # or not
+        def create_or_reset_job(job_name, template, **parameters)
+            xml = Autoproj::Jenkins.render_template(template, **parameters)
+            if has_job?(job_name)
+                reset_job(job_name, template, **parameters)
+            else
+                create_job(job_name, template, **parameters)
+            end
+        end
+
         # Test whether the server already has a job
         #
         # @param [String] job_name

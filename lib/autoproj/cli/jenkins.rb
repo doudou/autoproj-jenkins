@@ -22,7 +22,7 @@ module Autoproj
                 results
             end
 
-            def create_or_update_buildconf_job(*package_names, force: false, dev: false, credentials_id: nil, vcs_credentials: [])
+            def create_or_update_buildconf_job(*package_names, dev: false, credentials_id: nil, vcs_credentials: [])
                 initialize_and_load
 
                 if dev

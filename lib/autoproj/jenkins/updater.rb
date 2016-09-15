@@ -36,16 +36,6 @@ module Autoproj::Jenkins
             @job_prefix = job_prefix
         end
 
-        # Create the master buildconf job
-        #
-        # @return [void]
-        def create_buildconf_job(force: false, quiet_period: 5)
-            if force
-                server.delete_job("#{job_prefix}buildconf")
-            end
-            server.create_job("#{job_prefix}buildconf", 'buildconf.xml', quiet_period: quiet_period)
-        end
-
         # Update the buildconf pipeline
         #
         # @param [String] jenkins_url the URL of the jenkins server from the
@@ -66,7 +56,8 @@ module Autoproj::Jenkins
                 raise ArgumentError, "cannot use Jenkins to build an autoproj buildconf that is not on a remotely acessible VCS"
             end
 
-            server.update_job_pipeline("#{job_prefix}buildconf", 'buildconf.pipeline',
+            job_name = job_name_from_package_name("buildconf")
+            server.update_job_pipeline(job_name, 'buildconf.pipeline',
                 vcs: manifest_vcs,
                 package_names: package_names,
                 gemfile: gemfile,
@@ -87,10 +78,9 @@ module Autoproj::Jenkins
         # @param [Integer] quiet_period the job's quiet period, in seconds.
         #   Mostly used within autoproj-jenkins tests
         def create_or_update_buildconf_job(*packages, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil, dev: false, quiet_period: 5, credentials_id: nil, vcs_credentials: Credentials.new)
-            job_name = "#{job_prefix}buildconf"
-            if !server.has_job?(job_name)
-                create_buildconf_job(quiet_period: quiet_period)
-            end
+            job_name = job_name_from_package_name("buildconf")
+            server.create_or_reset_job(job_name, 'buildconf.xml', quiet_period: quiet_period)
+
             update_buildconf_pipeline(
                 *packages,
                 gemfile: gemfile,
@@ -106,18 +96,6 @@ module Autoproj::Jenkins
         # @return [String]
         def job_name_from_package_name(package_name)
             "#{job_prefix}#{package_name.gsub('/', '-')}"
-        end
-
-        # Create a job for a package
-        #
-        # @return [void]
-        def create_package_job(package, job_name: job_name_from_package_name(package.name), force: false, quiet_period: 5)
-            job_name = job_name_from_package_name(package.name)
-            if force
-                server.delete_job(job_name)
-            end
-
-            server.create_job(job_name, 'package.xml', quiet_period: quiet_period)
         end
 
         # Resolve a package by its name
@@ -171,9 +149,9 @@ module Autoproj::Jenkins
 
             packages.each do |package|
                 job_name = job_name_from_package_name(package.name)
-                if !server.has_job?(job_name)
-                    create_package_job(package, job_name: job_name, quiet_period: quiet_period)
-                end
+                server.create_or_reset_job(
+                    job_name, 'package.xml',
+                    job_name: job_name, quiet_period: quiet_period)
             end
 
             package_names = packages.map(&:name).to_set

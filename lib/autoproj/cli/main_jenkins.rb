@@ -49,7 +49,6 @@ module Autoproj
             end
 
             desc 'init URL [PACKAGE NAMES]', 'initialize the jenkins server by creating the base build job, optionally restricting the build to certain packages'
-            option :force, desc: 'if set, delete any existing job'
             option :trigger, desc: 'trigger the job once created',
                 type: :boolean, default: false
             option :dev, desc: 'assume that the jenkins instance is a development instance under vagrant and that autoproj-jenkins is made available as /opt/autoproj-jenkins',
@@ -67,7 +66,6 @@ module Autoproj
                 ops.create_or_update_buildconf_job(
                     *package_names,
                     credentials_id: options[:credentials_id],
-                    force: options[:force],
                     vcs_credentials: options[:vcs_credentials],
                     dev: options[:dev])
                 if options[:trigger]
@@ -77,7 +75,6 @@ module Autoproj
 
 
             desc 'update [PACKAGE_NAMES]', 'add the following package and its dependencies to the jenkins build'
-            option :force, desc: 'ignore the current state, generate jobs as if nothing was ever done'
             option :dev, desc: 'assume that the jenkins instance is a development instance under vagrant and that autoproj-jenkins is made available as /opt/autoproj-jenkins',
                 type: :boolean, default: false
             option :vcs_credentials, desc: 'list of vcs_type:URLs for which credentials should be provided (see documentation)',
