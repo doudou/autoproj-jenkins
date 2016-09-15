@@ -42,7 +42,7 @@ module Autoproj
 
             def add_or_update_packages(*package_names, dev: false, vcs_credentials: [])
                 initialize_and_load
-                source_packages, _ = finalize_setup(package_names, non_imported_packages: nil)
+                source_packages, _ = finalize_setup(package_names, non_imported_packages: :ignore)
                 source_packages = source_packages.map do |package_name|
                     ws.manifest.package_definition_by_name(package_name)
                 end
