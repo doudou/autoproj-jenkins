@@ -77,7 +77,7 @@ module Autoproj::Jenkins
 
         def jenkins_connect_options(url: 'http://localhost:8080')
             logger = Logger.new(StringIO.new)
-            Hash[server_url: url, logger: logger]
+            Hash[server_url: url, logger: logger, log_location: nil]
         end
 
         def jenkins_connect(url: 'http://localhost:8080')
