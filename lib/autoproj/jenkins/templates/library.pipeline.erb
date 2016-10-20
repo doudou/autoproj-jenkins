@@ -1,3 +1,4 @@
+@NonCPS
 def isUpstreamOK(jobName, buildId)
 {
     def job = Jenkins.instance.getItem(jobName)
@@ -26,6 +27,7 @@ def isUpstreamOK(jobName, buildId)
     }
 }
 
+@NonCPS
 def getTriggerBuild(currentBuild)
 {
     def triggerBuild = currentBuild.rawBuild.getCause(hudson.model.Cause$UpstreamCause)
@@ -35,11 +37,13 @@ def getTriggerBuild(currentBuild)
     return null
 }
 
+@NonCPS
 def findBuildTriggeredBy(job, triggerJob, triggerBuild)
 {
     def jobBuilds = job.getBuilds()
-    for (build in jobBuilds)
+    for (buildIndex = 0; buildIndex < jobBuilds.size(); ++buildIndex)
     {
+        def build = jobBuilds[buildIndex]
         def buildCause = build.getCause(hudson.model.Cause$UpstreamCause)
         if (buildCause)
         {
@@ -59,8 +63,9 @@ def getUpstreamBuilds(upstreamJobNames, triggerJob, triggerBuild)
     def upstreamBuilds = []
 
     // Iterate list -- NOTE: we cannot use groovy style or even modern java style iteration
-    for (jobName in upstreamJobNames)
+    for (jobIndex = 0; jobIndex < upstreamJobNames.size(); ++jobIndex)
     {
+        def jobName = upstreamJobNames[jobIndex]
         if (jobName == triggerJob)
         {
             echo "upstream build: ${jobName}#${triggerBuild}"
@@ -95,7 +100,9 @@ def waitForUpstreamBuilds(upstreamBuilds)
         waitContinue = false;
 
         // Iterate list -- NOTE: we cannot use groovy style or even modern java style iteration
-        for(entry in upstreamBuilds) {
+        for (upstreamBuildIndex = 0; upstreamBuildIndex < upstreamBuilds.size(); ++upstreamBuildIndex)
+        {
+            def entry = upstreamBuilds[upstreamBuildIndex]
             def upstreamJobName = entry[0]
             def upstreamBuildId = entry[1]
             def status = isUpstreamOK(upstreamJobName, upstreamBuildId)
@@ -124,7 +131,8 @@ def makeUpstreamArtifactImporters(autoproj, fullWorkspaceDir, upstreamDir,
     dir(upstreamDir) { deleteDir() }
 
     def upstreamArtifactImporters = [:]
-    for (jobIndex = 0; jobIndex < upstreamJobNames.size(); ++jobIndex) {
+    for (jobIndex = 0; jobIndex < upstreamJobNames.size(); ++jobIndex)
+    {
         def jobName        = upstreamJobNames[jobIndex]
         def fullPrefix     = upstreamPrefixes[jobIndex]
         def buildId        = upstreamBuilds[jobIndex][1]
@@ -188,8 +196,9 @@ def handleDownstream(autoproj, fullWorkspaceDir,
 
 
 def triggerDownstreamJobs(jobNames) {
-    for (job_name in jobNames) {
-        build job: job_name, wait: false
+    for (jobIndex = 0; jobIndex < jobNames.size(); ++jobIndex)
+    {
+        build job: jobNames[jobIndex], wait: false
     }
     return null
 }
