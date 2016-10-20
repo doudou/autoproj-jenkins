@@ -147,7 +147,7 @@ def makeUpstreamArtifactImporters(autoproj, fullWorkspaceDir, upstreamDir,
     return upstreamArtifactImporters
 }
 
-def triggeredByUser = (currentBuild.rawBuild.getCause(hudson.model.Cause$UserIdCause) != null)
+def triggeredByUpstream = (currentBuild.rawBuild.getCause(hudson.model.Cause$UpstreamCause) != null)
 def triggerBuild    = getTriggerBuild(currentBuild)
 if (!triggerBuild) {
     triggerBuild = [null, null]

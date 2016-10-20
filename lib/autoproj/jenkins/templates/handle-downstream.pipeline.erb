@@ -12,7 +12,7 @@ dir(downstreamDir) {
     deleteDir()
 }
 
-if (triggeredByUser) { // Defined in handle-upstream.pipeline.erb
+if (! triggeredByUpstream) { // Defined in handle-upstream.pipeline.erb
     <% downstream_jobs.each_key do |job_name| %>
     build job: "<%= job_name %>", wait: false
     <% end %>
