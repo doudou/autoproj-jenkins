@@ -50,7 +50,7 @@ module Autoproj::Jenkins
         #   with --dev or not
         # @param [Array<Autoproj::PackageDefinition>] packages if non-empty,
         #   restrict operations to these packages and their dependencies
-        def update_buildconf_pipeline(*package_names, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil, dev: false, credentials_id: nil, vcs_credentials: Credentials.new)
+        def update_buildconf_pipeline(*packages, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil, dev: false, credentials_id: nil, vcs_credentials: Credentials.new)
             manifest_vcs = ws.manifest.vcs
             if manifest_vcs.local? || manifest_vcs.none?
                 raise ArgumentError, "cannot use Jenkins to build an autoproj buildconf that is not on a remotely acessible VCS"
@@ -59,7 +59,7 @@ module Autoproj::Jenkins
             job_name = job_name_from_package_name("buildconf")
             server.update_job_pipeline(job_name, 'buildconf.pipeline',
                 vcs: manifest_vcs,
-                package_names: package_names,
+                package_names: packages.map(&:name),
                 gemfile: gemfile,
                 autoproj_install_path: autoproj_install_path,
                 job_prefix: job_prefix,
