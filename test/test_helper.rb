@@ -145,7 +145,7 @@ module Autoproj::Jenkins
             jenkins_jobs.build(prefixed_job_name)
         end
 
-        def jenkins_join_job(job_name, progress: jenkins_run_progress?, start_timeout: 30, timeout: Float::INFINITY)
+        def jenkins_join_job(job_name, progress: jenkins_run_progress?, start_timeout: 30, expected_final_status: ['success', 'unstable'], timeout: Float::INFINITY)
             prefixed_job_name = TEST_JOB_PREFIX + job_name
             console_start = 0
 
@@ -167,7 +167,7 @@ module Autoproj::Jenkins
                         flunk("#{job_name} timed out: did not start within #{start_timeout} seconds")
                     end
                 else
-                    if status == 'success'
+                    if expected_final_status.include?(status)
                         return
                     else
                         output = jenkins_console_output(job_name)

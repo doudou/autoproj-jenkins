@@ -32,6 +32,7 @@ def getTriggerBuild(currentBuild)
     if (triggerBuild) {
         return [triggerBuild.getUpstreamProject(), triggerBuild.getUpstreamBuild()]
     }
+    return null
 }
 
 def findBuildTriggeredBy(job, triggerJob, triggerBuild)
@@ -50,6 +51,7 @@ def findBuildTriggeredBy(job, triggerJob, triggerBuild)
             }
         }
     }
+    return null
 }
 
 def getUpstreamBuilds(upstreamJobNames, triggerJob, triggerBuild)
@@ -147,14 +149,48 @@ def makeUpstreamArtifactImporters(autoproj, fullWorkspaceDir, upstreamDir,
     return upstreamArtifactImporters
 }
 
-def triggeredByUpstream = (currentBuild.rawBuild.getCause(hudson.model.Cause$UpstreamCause) != null)
-def triggerBuild    = getTriggerBuild(currentBuild)
-if (!triggerBuild) {
-    triggerBuild = [null, null]
-}
-def upstreamBuilds = getUpstreamBuilds(upstreamJobNames, triggerBuild[0], triggerBuild[1])
+def installUpstreamArtifacts(autoproj, fullWorkspaceDir,
+        jobPackageName, jobPackagePrefix,
+        upstreamJobNames, upstreamPackagePrefixes, upstreamBuilds)
+{
+    def upstreamDir = "artifacts/upstream"
+    parallel(makeUpstreamArtifactImporters(
+            autoproj, fullWorkspaceDir, upstreamDir,
+            upstreamJobNames, upstreamPackagePrefixes, upstreamBuilds)
+    )
+    // We don't need the upstream artifacts anymore, clear some disk space
+    dir(upstreamDir) { deleteDir() }
 
-if (!waitForUpstreamBuilds(upstreamBuilds)) {
-    return
+    if (fileExists("lastPrefix")) {
+        sh "mv lastPrefix '${jobPackagePrefix}'"
+    }
+    return null
+}
+
+def handleDownstream(autoproj, fullWorkspaceDir,
+        jobName, jobPackagePrefix, artifactGlob)
+{
+    def downstreamDir = "artifacts/downstream"
+    def targetArtifactPath = "${fullWorkspaceDir}/${downstreamDir}/${jobName}-prefix.zip"
+
+    dir(downstreamDir) { deleteDir() }
+    dir("${downstreamDir}/${jobName}") {
+        sh "rsync '${jobPackagePrefix}/' './' -a --delete"
+        sh "${autoproj} jenkins relativize ./ '${fullWorkspaceDir}' '@WORKSPACE_ROOT@'"
+        zip zipFile: targetArtifactPath, glob: artifactGlob
+    }
+    dir(downstreamDir) {
+        archiveArtifacts artifacts: "*.zip"
+        deleteDir()
+    }
+    return null
+}
+
+
+def triggerDownstreamJobs(jobNames) {
+    for (job_name in jobNames) {
+        build job: job_name, wait: false
+    }
+    return null
 }
 

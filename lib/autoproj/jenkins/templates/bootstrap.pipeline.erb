@@ -1,4 +1,3 @@
-def fullWorkspaceDir = pwd()
 env.HOME = fullWorkspaceDir
 <% if autoproj_install_path %>
 sh 'cp -f "<%= autoproj_install_path %>" ./autoproj_install'
@@ -23,5 +22,4 @@ dir('dev') {
     sh ".autoproj/bin/aup autoproj/ --force-reset"
 }
 
-def autoproj = "${fullWorkspaceDir}/dev/.autoproj/bin/autoproj"
 env.AUTOPROJ_CURRENT_ROOT = "${fullWorkspaceDir}/dev"

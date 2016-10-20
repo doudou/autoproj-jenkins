@@ -1,43 +1,51 @@
+<%= render_template('library.pipeline') %>
+
 node(label: 'autoproj-jenkins') {
-    stage 'bootstrap'
-    <%= render_template('bootstrap.pipeline', vcs: vcs, gemfile: gemfile, autoproj_install_path: autoproj_install_path, vcs_credentials: vcs_credentials, indent: 4) %>
+    def fullWorkspaceDir = pwd()
+    def autoproj = "${fullWorkspaceDir}/dev/.autoproj/bin/autoproj"
+
+    stage('bootstrap') {
+        <%= render_template('bootstrap.pipeline', vcs: vcs, gemfile: gemfile, autoproj_install_path: autoproj_install_path, vcs_credentials: vcs_credentials, indent: 4) %>
+    }
 
     dir('dev') {
         def arg_packages = "<%= package_names.map { |name| "'#{name}'" }.join(" ") %>"
 
-        stage 'checkout and update packages'
-        sh "${autoproj} test enable"
-        <%= render_template('setup-git-credentials.pipeline', credentials: vcs_credentials[:git], indent: 8) %>
-        sh "${autoproj} update ${arg_packages} --force-reset -k"
-
-        stage 'update package jobs and trigger them'
-        def arg_dev      = "<%= " --dev" if dev %>"
-        def arg_job_prefix = "<%= " '--job-prefix=#{job_prefix}'" if !job_prefix.empty? %>"
-        <% if vcs_credentials.empty?  %>
-        def arg_vcs_credentials = ""
-        <% else %>
-            <% arg_vcs_credentials = vcs_credentials.credentials.flat_map do |vcs_type, vcs_c|
-                  vcs_c.map do |c|
-                      "#{vcs_type}:#{c.protocol}://#{c.host}"
-                  end
-               end.join(" ") %>
-            def arg_vcs_credentials = " '--vcs-credentials=<%= arg_vcs_credentials %>'"
-        <% end %>
-
-        <% if credentials_id %>
-        def jobNames = withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: '<%= credentials_id %>',
-                          usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
-            def credentials = " --username '${env.USERNAME}' --password '${env.PASSWORD}'"
-            sh(script: "${autoproj} jenkins update${arg_dev}${arg_job_prefix} '${env.JENKINS_URL}' ${arg_packages}${credentials}${arg_vcs_credentials}", returnStdout: true).split("\n")
+        stage('checkout and update packages') {
+            sh "${autoproj} test enable"
+            <%= render_template('setup-git-credentials.pipeline', credentials: vcs_credentials[:git], indent: 8) %>
+            sh "${autoproj} update ${arg_packages} --force-reset -k"
         }
-        <% else %>
-        def jobNames = sh(
-            script: "${autoproj} jenkins update${arg_dev}${arg_job_prefix} 'http://localhost:8080' ${arg_packages}${arg_vcs_credentials}",
-            returnStdout: true).split("\n")
-        <% end %>
-        for (job_name in jobNames) {
-            build job: job_name, wait: false
+
+        def jobNames = []
+
+        stage('update package jobs and trigger them') {
+            def arg_dev      = "<%= " --dev" if dev %>"
+            def arg_job_prefix = "<%= " '--job-prefix=#{job_prefix}'" if !job_prefix.empty? %>"
+            <% if vcs_credentials.empty?  %>
+            def arg_vcs_credentials = ""
+            <% else %>
+                <% arg_vcs_credentials = vcs_credentials.credentials.flat_map do |vcs_type, vcs_c|
+                      vcs_c.map do |c|
+                          "#{vcs_type}:#{c.protocol}://#{c.host}"
+                      end
+                   end.join(" ") %>
+                def arg_vcs_credentials = " '--vcs-credentials=<%= arg_vcs_credentials %>'"
+            <% end %>
+
+            <% if credentials_id %>
+            jobNames = withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: '<%= credentials_id %>',
+                              usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
+                def credentials = " --username '${env.USERNAME}' --password '${env.PASSWORD}'"
+                sh(script: "${autoproj} jenkins update${arg_dev}${arg_job_prefix} '${env.JENKINS_URL}' ${arg_packages}${credentials}${arg_vcs_credentials}", returnStdout: true).split("\n")
+            }
+            <% else %>
+            jobNames = sh(
+                script: "${autoproj} jenkins update${arg_dev}${arg_job_prefix} 'http://localhost:8080' ${arg_packages}${arg_vcs_credentials}",
+                returnStdout: true).split("\n")
+            <% end %>
         }
+        triggerDownstreamJobs(jobNames)
     }
 }
 

@@ -107,7 +107,7 @@ module Autoproj::Jenkins
                 refute jenkins_has_job?('base/cmake')
             end
 
-            it "handles dependencies between packages" do
+            it "triggers downstream jobs if triggered manually" do
                 updater.update(base_cmake, base_logging, **update_options)
                 jenkins_start_job 'base-cmake'
                 jenkins_join_job 'base-cmake'

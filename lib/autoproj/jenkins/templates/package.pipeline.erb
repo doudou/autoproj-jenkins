@@ -1,96 +1,115 @@
 import java.nio.file.Paths
 
+def jobName = "<%= job_name %>"
 def jobPackageName = "<%= package_name %>"
 def upstreamJobNames = [<%= upstream_jobs.each_key.map { |job_name| "'#{job_name}'" }.join(", ") %>]
 def upstreamPackageNames = [<%= upstream_jobs.each_value.map { |package_name| "'#{package_name}'" }.join(", ") %>]
+<%= render_template('library.pipeline') %>
+def triggeredByUpstream = false
+def upstreamBuilds = []
 
-stage 'waiting for upstream jobs to finish'
-<%= render_template('wait-upstream.pipeline') %>
+stage('waiting for upstream jobs to finish') {
+    triggeredByUpstream = (currentBuild.rawBuild.getCause(hudson.model.Cause$UpstreamCause) != null)
+    def triggerBuild    = getTriggerBuild(currentBuild)
+    if (!triggerBuild) {
+        triggerBuild = [null, null]
+    }
+    upstreamBuilds = getUpstreamBuilds(upstreamJobNames, triggerBuild[0], triggerBuild[1])
+
+    if (!waitForUpstreamBuilds(upstreamBuilds)) {
+        return
+    }
+}
 
 node(label: 'autoproj-jenkins') {
+    def fullWorkspaceDir = pwd()
+    def autoproj = "${fullWorkspaceDir}/dev/.autoproj/bin/autoproj"
     dir('dev/install/log') { deleteDir() }
 
-    stage 'bootstrap'
-    <%= render_template('bootstrap.pipeline', vcs: buildconf_vcs, gemfile: gemfile, autoproj_install_path: autoproj_install_path, vcs_credentials: vcs_credentials, indent: 4) %>
-    stage 'install upstream artifacts'
+    def jobPackagePrefix = null
+    def upstreamPackagePrefixes = null
 
-    def upstreamDir = "artifacts/upstream"
-    def packagePrefixes = sh(script: "${autoproj} locate --no-cache --prefix '${jobPackageName}' ${upstreamPackageNames.join(" ")}", returnStdout: true).
-    split("\n")
+    stage('bootstrap') {
+        <%= render_template('bootstrap.pipeline', vcs: buildconf_vcs, gemfile: gemfile, autoproj_install_path: autoproj_install_path, vcs_credentials: vcs_credentials, indent: 4) %>
 
-    def jobPackagePrefix = packagePrefixes[0]
-    def upstreamPackagePrefixes = packagePrefixes.tail()
+        def jenkins_dependency_overrides = "<%= render_template 'jenkins_dependency_overrides.rb', escape: true, package_name: package_name, upstream_jobs: upstream_jobs %>"
+        writeFile file: 'dev/autoproj/overrides.d/99_jenkins_dependency_overrides.rb',
+            text: jenkins_dependency_overrides
 
-    parallel(makeUpstreamArtifactImporters(
-            autoproj, fullWorkspaceDir, upstreamDir,
-            upstreamJobNames, upstreamPackagePrefixes, upstreamBuilds)
-    )
-    // We don't need the upstream artifacts anymore, clear some disk space
-    dir(upstreamDir) { deleteDir() }
+        def packagePrefixes = sh(script: "${autoproj} locate --no-cache --prefix '${jobPackageName}' ${upstreamPackageNames.join(" ")}", returnStdout: true).
+            split("\n")
 
-    if (fileExists("lastPrefix")) {
-        sh "mv lastPrefix '${jobPackagePrefix}'"
+        jobPackagePrefix        = packagePrefixes[0]
+        upstreamPackagePrefixes = packagePrefixes.tail()
     }
 
-    def jenkins_dependency_overrides = "<%= render_template 'jenkins_dependency_overrides.rb', escape: true, package_name: package_name, upstream_jobs: upstream_jobs %>"
-    writeFile file: 'dev/autoproj/overrides.d/99_jenkins_dependency_overrides.rb',
-        text: jenkins_dependency_overrides
+    stage('install upstream artifacts') {
+        installUpstreamArtifacts(autoproj, fullWorkspaceDir,
+            jobPackageName, jobPackagePrefix,
+            upstreamJobNames, upstreamPackagePrefixes, upstreamBuilds)
+    }
 
     dir('dev') {
-        stage 'prepare build'
-        <%= render_template("import-#{vcs.type}.pipeline",
-                            patch: true,
-                            allow_unused: true,
-                            package_dir: package_dir,
-                            vcs: vcs,
-                            credentials: vcs_credentials.for(vcs),
-                            package_name: package_name,
-                            indent: 8) %>
-        sh "${autoproj} test disable '<%= package_name %>'"
-        sh "${autoproj} osdeps '<%= package_name %>' 'pkg-config'"
-
-        stage 'build'
-        try {
-            sh "${autoproj} build --force --deps=f '<%= package_name %>' -p1"
+        stage('prepare build') {
+            <%= render_template("import-#{vcs.type}.pipeline",
+                                patch: true,
+                                allow_unused: true,
+                                package_dir: package_dir,
+                                vcs: vcs,
+                                credentials: vcs_credentials.for(vcs),
+                                package_name: package_name,
+                                indent: 8) %>
+            sh "${autoproj} test disable '<%= package_name %>'"
+            sh "${autoproj} osdeps '<%= package_name %>' 'pkg-config'"
         }
-        catch(err) {
+
+        stage('build') {
+            try {
+                sh "${autoproj} build --force --deps=f '<%= package_name %>' -p1"
+            }
+            catch(err) {
+                archive includes: 'install/<%= package_name %>/log/<%= package_name %>-*.log'
+                throw(err)
+            }
             archive includes: 'install/<%= package_name %>/log/<%= package_name %>-*.log'
-            throw(err)
         }
-        archive includes: 'install/<%= package_name %>/log/<%= package_name %>-*.log'
     }
 
-    stage 'trigger dependencies'
-    <%= render_template('handle-downstream.pipeline',
-                        job_name: job_name,
-                        artifact_glob: artifact_glob,
-                        downstream_jobs: downstream_jobs,
-                        indent: 4) %>
-
-    stage 'tests'
-    def test_timestamp_path = "${fullWorkspaceDir}/test-timestamp"
-    touch file: test_timestamp_path
-    def test_output_path    = "${fullWorkspaceDir}/test"
-    def autoproj_test_failed = false
-    dir('dev')
-    {
-        try {
-            sh "${autoproj} test enable '<%= package_name %>'"
-            sh "${autoproj} osdeps '<%= package_name %>'"
-            sh "${autoproj} build --deps=f '<%= package_name %>' -p1"
-            sh "${autoproj} test -p=1 '<%= package_name %>'"
+    stage('handle downstream') {
+        handleDownstream(autoproj, fullWorkspaceDir,
+            jobName, jobPackagePrefix, "<%= artifact_glob %>")
+        if (! triggeredByUpstream) {
+            <% downstream_jobs.each_key do |job_name| %>
+            build job: "<%= job_name %>", wait: false
+            <% end %>
         }
-        catch(err) { autoproj_test_failed = true }
-
-        try { sh "${autoproj} jenkins postprocess-tests --after=${test_timestamp_path} ${test_output_path} '<%= package_name %>'" }
-        catch(err) { autoproj_test_failed = true }
     }
-    try { junit allowEmptyResults: true, keepLongStdio: true, testResults: "test/*.xml" }
-    catch(err) { autoproj_test_failed = true }
 
-    if (autoproj_test_failed)
-    {
-        currentBuild.result = 'UNSTABLE'
+    stage('tests') {
+        def test_timestamp_path = "${fullWorkspaceDir}/test-timestamp"
+        touch file: test_timestamp_path
+        def test_output_path    = "${fullWorkspaceDir}/test"
+        def autoproj_test_failed = false
+        dir('dev')
+        {
+            try {
+                sh "${autoproj} test enable '<%= package_name %>'"
+                sh "${autoproj} osdeps '<%= package_name %>'"
+                sh "${autoproj} build --deps=f '<%= package_name %>' -p1"
+                sh "${autoproj} test -p=1 '<%= package_name %>'"
+            }
+            catch(err) { autoproj_test_failed = true }
+
+            try { sh "${autoproj} jenkins postprocess-tests --after=${test_timestamp_path} ${test_output_path} '<%= package_name %>'" }
+            catch(err) { autoproj_test_failed = true }
+        }
+        try { junit allowEmptyResults: true, keepLongStdio: true, testResults: "test/*.xml" }
+        catch(err) { autoproj_test_failed = true }
+
+        if (autoproj_test_failed)
+        {
+            currentBuild.result = 'UNSTABLE'
+        }
     }
 
     // Move the current package prefix to a separate folder, to ensure that
