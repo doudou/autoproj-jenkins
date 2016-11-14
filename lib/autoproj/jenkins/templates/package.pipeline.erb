@@ -30,7 +30,7 @@ node(label: 'autoproj-jenkins') {
     def upstreamPackagePrefixes = null
 
     stage('bootstrap') {
-        <%= render_template('bootstrap.pipeline', vcs: buildconf_vcs, gemfile: gemfile, autoproj_install_path: autoproj_install_path, vcs_credentials: vcs_credentials, indent: 4) %>
+        <%= render_template('bootstrap.pipeline', poll: false, vcs: buildconf_vcs, gemfile: gemfile, autoproj_install_path: autoproj_install_path, vcs_credentials: vcs_credentials, indent: 4) %>
 
         def jenkins_dependency_overrides = "<%= render_template 'jenkins_dependency_overrides.rb', escape: true, package_name: package_name, upstream_jobs: upstream_jobs %>"
         writeFile file: 'dev/autoproj/overrides.d/99_jenkins_dependency_overrides.rb',

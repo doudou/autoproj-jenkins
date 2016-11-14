@@ -5,7 +5,7 @@ node(label: 'autoproj-jenkins') {
     def autoproj = "${fullWorkspaceDir}/dev/.autoproj/bin/autoproj"
 
     stage('bootstrap') {
-        <%= render_template('bootstrap.pipeline', vcs: vcs, gemfile: gemfile, autoproj_install_path: autoproj_install_path, vcs_credentials: vcs_credentials, indent: 4) %>
+        <%= render_template('bootstrap.pipeline', poll: true, vcs: vcs, gemfile: gemfile, autoproj_install_path: autoproj_install_path, vcs_credentials: vcs_credentials, indent: 4) %>
     }
 
     dir('dev') {

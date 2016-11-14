@@ -5,7 +5,7 @@ dir('<%= package_dir %>') {
         sh "${autoproj} unpatch ."
     }
     <% end %>
-    svn url: '<%= vcs.url %>'
+    svn url: '<%= vcs.url %>', poll: poll
     <% if patch %>
     sh "${autoproj} patch ."
     <% end %>
