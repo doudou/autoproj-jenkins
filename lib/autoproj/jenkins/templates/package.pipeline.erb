@@ -9,10 +9,13 @@ def triggeredByUpstream = false
 def upstreamBuilds = []
 
 stage('waiting for upstream jobs to finish') {
-    triggeredByUpstream = (currentBuild.rawBuild.getCause(hudson.model.Cause$UpstreamCause) != null)
     def triggerBuild    = getTriggerBuild(currentBuild)
-    if (!triggerBuild) {
-        triggerBuild = [null, null]
+    if (triggerBuild) {
+        triggeredByUpstream = true;
+    }
+    else {
+        triggeredByUpstream = false;
+        triggerBuild = [null, null];
     }
     upstreamBuilds = getUpstreamBuilds(upstreamJobNames, triggerBuild[0], triggerBuild[1])
 
@@ -52,6 +55,7 @@ node(label: 'autoproj-jenkins') {
     dir('dev') {
         stage('prepare build') {
             <%= render_template("import-#{vcs.type}.pipeline",
+                                poll: true,
                                 patch: true,
                                 allow_unused: true,
                                 package_dir: package_dir,
