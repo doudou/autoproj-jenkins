@@ -8,7 +8,7 @@ dir('<%= package_dir %>') {
     <% if credentials
            arg_credentials = "credentialsId: '#{credentials.jenkins_id}', "
        end %>
-    <%= vcs.type %> poll: poll, <%= arg_credentials %> <%= Hash[url: vcs.url].merge(vcs.options).map { |k, v| "#{k}: '#{v}'" }.join(", ") %>
+    <%= vcs.type %> poll: <%= poll %>, <%= arg_credentials %> <%= Hash[url: vcs.url].merge(vcs.options).map { |k, v| "#{k}: '#{v}'" }.join(", ") %>
     <% if patch %>
     sh "${autoproj} patch ."
     <% end %>
