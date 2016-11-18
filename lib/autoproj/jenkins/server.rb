@@ -49,6 +49,11 @@ module Autoproj::Jenkins
             end
         end
 
+        # Render a pipeline script
+        def render_pipeline(job_name, template, **parameters)
+            Autoproj::Jenkins.render_template(template, **parameters)
+        end
+
         # Test whether the server already has a job
         #
         # @param [String] job_name

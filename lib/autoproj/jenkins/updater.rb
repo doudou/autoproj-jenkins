@@ -147,13 +147,6 @@ module Autoproj::Jenkins
         def update(*packages, quiet_period: 5, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil, vcs_credentials: Credentials.new)
             reverse_dependencies = ws.manifest.compute_revdeps
 
-            packages.each do |package|
-                job_name = job_name_from_package_name(package.name)
-                server.create_or_reset_job(
-                    job_name, 'package.xml',
-                    quiet_period: quiet_period)
-            end
-
             package_names = packages.map(&:name).to_set
             packages.map do |package|
                 job_name = job_name_from_package_name(package.name)
@@ -161,7 +154,7 @@ module Autoproj::Jenkins
                     raise UnhandledVCS, "the #{package.vcs.type} importer, used by #{package.name}, is not supported by autoproj-jenkins"
                 end
 
-                upstream_jobs = compute_job_to_package_map(compute_upstream_packages(package), package_names)
+                upstream_jobs   = compute_job_to_package_map(compute_upstream_packages(package), package_names)
                 downstream_jobs = compute_job_to_package_map(compute_downstream_packages(package, reverse_dependencies), package_names)
 
                 prefix_relative_path =
@@ -172,7 +165,7 @@ module Autoproj::Jenkins
                         "install/#{package.name}"
                     end
 
-                server.update_job_pipeline(job_name, 'package.pipeline',
+                pipeline = server.render_pipeline(job_name, 'package.pipeline',
                     buildconf_vcs: ws.manifest.vcs,
                     vcs: package.vcs,
                     package_name: package.name,
@@ -184,6 +177,11 @@ module Autoproj::Jenkins
                     gemfile: gemfile,
                     autoproj_install_path: autoproj_install_path,
                     vcs_credentials: vcs_credentials)
+
+                server.create_or_reset_job(
+                    job_name, 'package.xml',
+                    pipeline: pipeline,
+                    quiet_period: quiet_period)
 
                 job_name
             end
