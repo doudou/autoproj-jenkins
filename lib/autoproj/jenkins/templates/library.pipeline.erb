@@ -83,7 +83,13 @@ def getUpstreamBuilds(upstreamJobNames, triggerJob, triggerBuild)
                 else {
                     echo "manual build trigger, using last successful build for ${jobName}"
                 }
-                matchingBuild = job.getLastSuccessfulBuild().getNumber()
+                if (job.getLastSuccessfulBuild())
+                    matchingBuild = job.getLastSuccessfulBuild().getNumber()
+                else
+                {
+                    echo "${jobName} has no successful build, aborting"
+                    return;
+                }
             }
             echo "upstream build: ${jobName}#${matchingBuild}"
             upstreamBuilds << [jobName, matchingBuild]
