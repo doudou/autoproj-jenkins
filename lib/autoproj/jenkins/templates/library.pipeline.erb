@@ -88,7 +88,7 @@ def getUpstreamBuilds(upstreamJobNames, triggerJob, triggerBuild)
                 else
                 {
                     echo "${jobName} has no successful build, aborting"
-                    return;
+                    return null
                 }
             }
             echo "upstream build: ${jobName}#${matchingBuild}"
