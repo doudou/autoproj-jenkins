@@ -33,11 +33,11 @@ module Autoproj
                     autoproj_install_path = nil
                 end
 
-                source_packages, _ = finalize_setup(package_names, recursive: false, non_imported_packages: :return)
-                source_packages = source_packages.map do |package_name|
-                    ws.manifest.package_definition_by_name(package_name)
-                end
-                updater.create_or_update_buildconf_job(*source_packages, gemfile: gemfile,
+                # Must NOT resolve the package names into packages. If they are
+                # package sets/metapackages, they need to be provided as-is to
+                # the buildconf template, so that the metapackage gets resolved
+                # each time instead of only at the point 'jenkins init' was done
+                updater.create_or_update_buildconf_job(*package_names, gemfile: gemfile,
                                                        autoproj_install_path: autoproj_install_path, dev: dev,
                                                        credentials_id: credentials_id,
                                                        vcs_credentials: parse_vcs_credentials(vcs_credentials))
