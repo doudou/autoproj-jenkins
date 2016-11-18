@@ -33,8 +33,11 @@ module Autoproj
                     autoproj_install_path = nil
                 end
 
-                finalize_setup(package_names, recursive: false, non_imported_packages: :return)
-                updater.create_or_update_buildconf_job(*package_names, gemfile: gemfile,
+                source_packages, _ = finalize_setup(package_names, recursive: false, non_imported_packages: :return)
+                source_packages = source_packages.map do |package_name|
+                    ws.manifest.package_definition_by_name(package_name)
+                end
+                updater.create_or_update_buildconf_job(*source_packages, gemfile: gemfile,
                                                        autoproj_install_path: autoproj_install_path, dev: dev,
                                                        credentials_id: credentials_id,
                                                        vcs_credentials: parse_vcs_credentials(vcs_credentials))
