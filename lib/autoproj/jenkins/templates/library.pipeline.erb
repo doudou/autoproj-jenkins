@@ -125,15 +125,7 @@ def waitForUpstreamBuilds(upstreamBuilds)
         return true;
     }
 
-    if (skipBuild)
-    {
-        currentBuild.result = 'NOT_BUILT';
-        return false;
-    }
-    else
-    {
-        return true;
-    }
+    return !skipBuild
 }
 
 def makeUpstreamArtifactImporters(autoproj, fullWorkspaceDir, upstreamDir,
