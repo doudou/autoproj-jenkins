@@ -22,8 +22,9 @@ module Autoproj::Jenkins
         # @param [String] template the name of the template
         # @param [Hash] parameters parameters for the template rendering
         # @raise (see Autoproj::Jenkins.render_template)
-        def create_job(job_name, template, **parameters)
+        def create_job(job_name, template, pipeline: '', **parameters)
             xml = Autoproj::Jenkins.render_template(template, **parameters)
+            xml = update_pipeline_in_config(xml, pipeline)
             jobs.create(job_name, xml)
         end
 
@@ -33,19 +34,33 @@ module Autoproj::Jenkins
         # @param [String] template the name of the template
         # @param [Hash] parameters parameters for the template rendering
         # @raise (see Autoproj::Jenkins.render_template)
-        def reset_job(job_name, template, **parameters)
+        def reset_job(job_name, template, pipeline: '', **parameters)
             xml = Autoproj::Jenkins.render_template(template, **parameters)
+            xml = update_pipeline_in_config(xml, pipeline)
             jobs.update(job_name, xml)
+        end
+
+        # Update the pipeline script in a job config
+        def update_pipeline_in_config(config, pipeline)
+            if config.respond_to?(:to_str)
+                config = REXML::Document.new(config)
+            end
+            config.elements['//definition/script'].text = pipeline
+            config.to_s
         end
 
         # Either create or reset a job, depending on whether it already exists
         # or not
-        def create_or_reset_job(job_name, template, **parameters)
+        #
+        # @param [String,nil] pipeline the job's pipeline script
+        def create_or_reset_job(job_name, template, pipeline: '', **parameters)
             xml = Autoproj::Jenkins.render_template(template, **parameters)
+            xml = update_pipeline_in_config(xml, pipeline)
+
             if has_job?(job_name)
-                reset_job(job_name, template, **parameters)
+                jobs.update(job_name, xml.to_s)
             else
-                create_job(job_name, template, **parameters)
+                jobs.create(job_name, xml.to_s)
             end
         end
 
@@ -93,7 +108,7 @@ module Autoproj::Jenkins
         def update_job_pipeline(job_name, template, **parameters)
             config = read_job_config(job_name)
             pipeline = Autoproj::Jenkins.render_template(template, **parameters)
-            config.elements['//definition/script'].text = pipeline
+            update_pipeline_in_config(config, pipeline)
             update_job_config(job_name, config)
         end
 
