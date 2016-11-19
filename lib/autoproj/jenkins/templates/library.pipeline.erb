@@ -74,6 +74,12 @@ def getUpstreamBuilds(upstreamJobNames, triggerJob, triggerBuild)
         else
         {
             def job = Jenkins.instance.getItem(jobName)
+            if (!job)
+            {
+                echo "${jobName} does not exist yet, aborting"
+                return null
+            }
+
             def matchingBuild = findBuildTriggeredBy(job, triggerJob, triggerBuild)
             if (!matchingBuild)
             {
@@ -120,9 +126,8 @@ def waitForUpstreamBuilds(upstreamBuilds)
                 return false
             }
         }
+        return true
     }
-
-    return true
 }
 
 def makeUpstreamArtifactImporters(autoproj, fullWorkspaceDir, upstreamDir,
