@@ -106,16 +106,20 @@ def getUpstreamBuilds(upstreamJobNames, triggerJob, triggerBuild)
 
 def waitForUpstreamBuilds(upstreamBuilds)
 {
-    while(true)
+    // Iterate list -- NOTE: we cannot use groovy style or even modern java style iteration
+    for (upstreamBuildIndex = 0; upstreamBuildIndex < upstreamBuilds.size(); ++upstreamBuildIndex)
     {
-        // Iterate list -- NOTE: we cannot use groovy style or even modern java style iteration
-        for (upstreamBuildIndex = 0; upstreamBuildIndex < upstreamBuilds.size(); ++upstreamBuildIndex)
+        def entry = upstreamBuilds[upstreamBuildIndex]
+        def upstreamJobName = entry[0]
+        def upstreamBuildId = entry[1]
+        while (true)
         {
-            def entry = upstreamBuilds[upstreamBuildIndex]
-            def upstreamJobName = entry[0]
-            def upstreamBuildId = entry[1]
             def status = isUpstreamOK(upstreamJobName, upstreamBuildId)
-            if (status == 'IN_PROGRESS')
+            if (status == 'OK')
+            {
+                break
+            }
+            else if (status == 'IN_PROGRESS')
             {
                 echo "waiting for job ${upstreamJobName}#${upstreamBuildId} to finish"
                 sleep 10
@@ -126,8 +130,8 @@ def waitForUpstreamBuilds(upstreamBuilds)
                 return false
             }
         }
-        return true
     }
+    return true
 }
 
 def makeUpstreamArtifactImporters(autoproj, fullWorkspaceDir, upstreamDir,
