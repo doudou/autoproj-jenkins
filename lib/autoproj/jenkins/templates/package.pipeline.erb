@@ -30,6 +30,11 @@ stage('waiting for upstream jobs to finish') {
     }
 }
 
+if (currentBuild.result == 'NOT_BUILT')
+{
+    return;
+}
+
 node(label: 'autoproj-jenkins') {
     def fullWorkspaceDir = pwd()
     def autoproj = "${fullWorkspaceDir}/dev/.autoproj/bin/autoproj"
