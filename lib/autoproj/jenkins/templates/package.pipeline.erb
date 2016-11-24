@@ -84,9 +84,11 @@ node(label: 'autoproj-jenkins') {
             }
             catch(err) {
                 archive includes: 'install/<%= package_name %>/log/<%= package_name %>-*.log'
+                archive includes: 'install/log/autoproj-osdeps.log'
                 throw(err)
             }
             archive includes: 'install/<%= package_name %>/log/<%= package_name %>-*.log'
+            archive includes: 'install/log/autoproj-osdeps.log'
         }
     }
 
