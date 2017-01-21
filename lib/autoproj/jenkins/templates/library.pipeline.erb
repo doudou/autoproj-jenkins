@@ -8,6 +8,10 @@ def isUpstreamOK(jobName, buildId)
     }
 
     def build = job.getBuild(buildId.toString())
+    if (!build)
+    {
+        error("cannot find build ${buildId} of job ${jobName}")
+    }
 
     def result = build.getResult()
     if (result)
