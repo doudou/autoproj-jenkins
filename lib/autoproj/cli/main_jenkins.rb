@@ -59,12 +59,19 @@ module Autoproj
                 default: 'autoproj-jenkins-cli'
             option :vcs_credentials, desc: 'list of vcs_type:URLs for which credentials should be provided (see documentation)',
                 type: :array, default: []
+            option :seed, desc: 'a YAML file containing seed configuration',
+                type: :string
             def init(url, *package_names)
                 require 'autoproj/cli/jenkins'
                 ops = create_ops(url, target_os: options[:target_os])
 
+                if options[:seed]
+                    seed = File.read(options[:seed])
+                end
+
                 ops.create_or_update_buildconf_job(
                     *package_names,
+                    seed: seed,
                     credentials_id: options[:credentials_id],
                     vcs_credentials: options[:vcs_credentials],
                     dev: options[:dev])
@@ -79,11 +86,18 @@ module Autoproj
                 type: :boolean, default: false
             option :vcs_credentials, desc: 'list of vcs_type:URLs for which credentials should be provided (see documentation)',
                 type: :array, default: []
+            option :seed, desc: 'a YAML file containing seed configuration',
+                type: :string
             def update(url, *package_names)
                 require 'autoproj/cli/jenkins'
+
+                if options[:seed]
+                    seed = File.read(options[:seed])
+                end
+
                 ops = create_ops(url)
                 Autoproj.report(silent: !options[:debug], debug: options[:debug]) do
-                    updated_jobs = ops.add_or_update_packages(*package_names, dev: options[:dev], vcs_credentials: options[:vcs_credentials])
+                    updated_jobs = ops.add_or_update_packages(*package_names, seed: seed, dev: options[:dev], vcs_credentials: options[:vcs_credentials])
                     updated_jobs.sort.each do |job_name|
                         puts job_name
                     end

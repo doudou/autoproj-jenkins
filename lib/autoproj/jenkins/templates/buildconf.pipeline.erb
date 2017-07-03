@@ -5,7 +5,7 @@ node(label: 'autoproj-jenkins') {
     def autoproj = "${fullWorkspaceDir}/dev/.autoproj/bin/autoproj"
 
     stage('bootstrap') {
-        <%= render_template('bootstrap.pipeline', poll: true, vcs: vcs, gemfile: gemfile, autoproj_install_path: autoproj_install_path, vcs_credentials: vcs_credentials, indent: 4) %>
+        <%= render_template('bootstrap.pipeline', seed: seed, poll: true, vcs: vcs, gemfile: gemfile, autoproj_install_path: autoproj_install_path, vcs_credentials: vcs_credentials, indent: 4) %>
     }
 
     dir('dev') {
@@ -37,15 +37,15 @@ node(label: 'autoproj-jenkins') {
             jobNames = withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: '<%= credentials_id %>',
                               usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
                 def credentials = " --username '${env.USERNAME}' --password '${env.PASSWORD}'"
-                sh(script: "${autoproj} jenkins update${arg_dev}${arg_job_prefix} '${env.JENKINS_URL}' ${arg_packages}${credentials}${arg_vcs_credentials}", returnStdout: true).split("\n")
+                sh(script: "${autoproj} jenkins update${arg_dev}${arg_job_prefix} --seed=../user_seed.yml '${env.JENKINS_URL}' ${arg_packages}${credentials}${arg_vcs_credentials}", returnStdout: true).split("\n")
             }
             <% else %>
             jobNames = sh(
-                script: "${autoproj} jenkins update${arg_dev}${arg_job_prefix} 'http://localhost:8080' ${arg_packages}${arg_vcs_credentials}",
+                script: "${autoproj} jenkins update${arg_dev}${arg_job_prefix} --seed=../user_seed.yml 'http://localhost:8080' ${arg_packages}${arg_vcs_credentials}",
                 returnStdout: true).split("\n")
             <% end %>
+            triggerDownstreamJobs(jobNames)
         }
-        triggerDownstreamJobs(jobNames)
     }
 }
 

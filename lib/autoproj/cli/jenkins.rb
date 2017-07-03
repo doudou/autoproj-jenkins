@@ -22,7 +22,7 @@ module Autoproj
                 results
             end
 
-            def create_or_update_buildconf_job(*package_names, dev: false, credentials_id: nil, vcs_credentials: [])
+            def create_or_update_buildconf_job(*package_names, seed: nil, dev: false, credentials_id: nil, vcs_credentials: [])
                 initialize_and_load
 
                 if dev
@@ -38,12 +38,13 @@ module Autoproj
                 # the buildconf template, so that the metapackage gets resolved
                 # each time instead of only at the point 'jenkins init' was done
                 updater.create_or_update_buildconf_job(*package_names, gemfile: gemfile,
+                                                       seed: seed,
                                                        autoproj_install_path: autoproj_install_path, dev: dev,
                                                        credentials_id: credentials_id,
                                                        vcs_credentials: parse_vcs_credentials(vcs_credentials))
             end
 
-            def add_or_update_packages(*package_names, dev: false, vcs_credentials: [])
+            def add_or_update_packages(*package_names, seed: nil, dev: false, vcs_credentials: [])
                 initialize_and_load
                 source_packages, _ = finalize_setup(package_names, non_imported_packages: :ignore)
                 source_packages = source_packages.map do |package_name|
@@ -60,6 +61,7 @@ module Autoproj
 
                 updater.update(
                     *source_packages,
+                    seed: seed,
                     gemfile: gemfile,
                     autoproj_install_path: autoproj_install_path,
                     vcs_credentials: parse_vcs_credentials(vcs_credentials))

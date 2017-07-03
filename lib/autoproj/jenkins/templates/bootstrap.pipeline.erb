@@ -6,7 +6,9 @@ sh 'wget -O autoproj_install https://raw.githubusercontent.com/rock-core/autopro
 <% end %>
 def gemfile = "<%= read_and_escape_file gemfile %>"
 writeFile file: 'Gemfile', text: gemfile
-def config = "<%= render_template('buildconf-config.yml', vcs: vcs, escape: true) %>"
+def user_seed_config = "<%= escape_to_groovy(seed) %>"
+writeFile file: 'user_seed.yml', text: user_seed_config
+def config = "<%= render_template('buildconf-config.yml', seed: seed, vcs: vcs, escape: true) %>"
 writeFile file: 'seed.yml', text: config
 dir('dev') {
     sh "ruby ../autoproj_install --skip-stage2 --seed-config=../seed.yml --gems-path=${env.JENKINS_HOME}/cache/gems --gemfile=../Gemfile"
