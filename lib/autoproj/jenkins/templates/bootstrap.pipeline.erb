@@ -22,7 +22,7 @@ dir('dev') {
                         package_name: 'autoproj/') %>
 
     <%= render_template('setup-git-credentials.pipeline', credentials: vcs_credentials[:git]) %>
-    sh ".autoproj/bin/aup autoproj/ --force-reset"
+    sh ".autoproj/bin/aup autoproj/ --force-reset --auto-exclude"
 }
 
 env.AUTOPROJ_CURRENT_ROOT = "${fullWorkspaceDir}/dev"
