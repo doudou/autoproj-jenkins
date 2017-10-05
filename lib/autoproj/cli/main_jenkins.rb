@@ -81,7 +81,7 @@ module Autoproj
             end
 
 
-            desc 'update [PACKAGE_NAMES]', 'add the following package and its dependencies to the jenkins build'
+            desc 'update URL [PACKAGE_NAMES]', 'add the following package and its dependencies to the jenkins build'
             option :dev, desc: 'assume that the jenkins instance is a development instance under vagrant and that autoproj-jenkins is made available as /opt/autoproj-jenkins',
                 type: :boolean, default: false
             option :vcs_credentials, desc: 'list of vcs_type:URLs for which credentials should be provided (see documentation)',
