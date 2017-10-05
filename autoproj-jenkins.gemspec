@@ -19,7 +19,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency 'jenkins_api_client'
-  spec.add_dependency 'autoproj', '>= 2.0.0.rc20'
+  spec.add_dependency 'autoproj', '>= 2.2.1'
   spec.add_development_dependency "bundler", "~> 1.12"
   spec.add_development_dependency "rake", "~> 11.0"
   spec.add_development_dependency "minitest", "~> 5.0"

@@ -14,7 +14,7 @@ node(label: 'autoproj-jenkins') {
         stage('checkout and update packages') {
             sh "${autoproj} test enable"
             <%= render_template('setup-git-credentials.pipeline', credentials: vcs_credentials[:git], indent: 8) %>
-            sh "${autoproj} update ${arg_packages} --force-reset -k"
+            sh "${autoproj} update ${arg_packages} --force-reset -k --auto-exclude"
         }
 
         def jobNames = []
