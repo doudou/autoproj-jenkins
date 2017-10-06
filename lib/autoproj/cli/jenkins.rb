@@ -26,7 +26,7 @@ module Autoproj
                 initialize_and_load
 
                 if dev
-                    gemfile = 'buildconf-vagrant-Gemfile'
+                    gemfile = 'buildconf-dev-Gemfile'
                     autoproj_install_path = '/opt/autoproj/bin/autoproj_install'
                 else
                     gemfile = 'buildconf-Gemfile'
@@ -52,7 +52,7 @@ module Autoproj
                 end
 
                 if dev
-                    gemfile = 'buildconf-vagrant-Gemfile'
+                    gemfile = 'buildconf-dev-Gemfile'
                     autoproj_install_path = '/opt/autoproj/bin/autoproj_install'
                 else
                     gemfile = 'buildconf-Gemfile'
