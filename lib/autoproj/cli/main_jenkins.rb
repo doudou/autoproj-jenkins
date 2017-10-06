@@ -51,7 +51,7 @@ module Autoproj
             desc 'init URL [PACKAGE NAMES]', 'initialize the jenkins server by creating the base build job, optionally restricting the build to certain packages'
             option :trigger, desc: 'trigger the job once created',
                 type: :boolean, default: false
-            option :dev, desc: 'assume that the jenkins instance is a development instance under vagrant and that autoproj-jenkins is made available as /opt/autoproj-jenkins',
+            option :dev, desc: 'assume that the jenkins instance is a development instance and that the various gems are checked out in /opt/. See the README for more details.',
                 type: :boolean, default: false
             option :target_os, desc: "the autoproj definition for the target OS as name0,name1:version0,version1",
                 default: nil
@@ -82,7 +82,7 @@ module Autoproj
 
 
             desc 'update URL [PACKAGE_NAMES]', 'add the following package and its dependencies to the jenkins build'
-            option :dev, desc: 'assume that the jenkins instance is a development instance under vagrant and that autoproj-jenkins is made available as /opt/autoproj-jenkins',
+            option :dev, desc: 'assume that the jenkins instance is a development instance and that the various gems are checked out in /opt/. See the README for more details.',
                 type: :boolean, default: false
             option :vcs_credentials, desc: 'list of vcs_type:URLs for which credentials should be provided (see documentation)',
                 type: :array, default: []
