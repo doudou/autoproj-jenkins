@@ -96,8 +96,8 @@ node(label: 'autoproj-jenkins') {
         handleDownstream(autoproj, fullWorkspaceDir,
             jobName, jobPackagePrefix, "<%= artifact_glob %>")
         if (! triggeredByUpstream) {
-            <% downstream_jobs.each_key do |job_name| %>build job: "<%= job_name %>", wait: false
-            <% end %>
+            let downstream_jobs = [<%= downstream_jobs.keys.map { |job_name| "'#{job_name}'" }.join(", ")]
+            triggerDownstreamJobs(downstream_jobs)
         }
     }
 
