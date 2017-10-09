@@ -1,16 +1,12 @@
 dir('<%= package_dir %>') {
-    <% if patch %>
-    if (fileExists('.git')) {
+    <% if patch %>if (fileExists('.git')) {
         sh "${autoproj} unpatch ."
-    }
-    <% end %>
+    }<% end %>
 
     <% if credentials
            arg_credentials = "credentialsId: '#{credentials.jenkins_id}', "
        end %>
     <%= vcs.type %> poll: <%= poll %>, <%= arg_credentials %> <%= Hash[url: vcs.url].merge(vcs.options).map { |k, v| "#{k}: '#{v}'" }.join(", ") %>
-    <% if patch %>
-    sh "${autoproj} patch ."
-    <% end %>
+    <% if patch %>sh "${autoproj} patch ."<% end %>
 }
 

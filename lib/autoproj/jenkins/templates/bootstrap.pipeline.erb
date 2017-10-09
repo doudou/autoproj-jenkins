@@ -1,6 +1,8 @@
 env.HOME = fullWorkspaceDir
-<% if autoproj_install_path %>sh 'cp -f "<%= autoproj_install_path %>" ./autoproj_install'
-<% else %>sh 'wget -O autoproj_install https://raw.githubusercontent.com/rock-core/autoproj/master/bin/autoproj_install'
+<% if autoproj_install_path %>
+sh 'cp -f "<%= autoproj_install_path %>" ./autoproj_install'
+<% else %>
+sh 'wget -O autoproj_install https://raw.githubusercontent.com/rock-core/autoproj/master/bin/autoproj_install'
 <% end %>
 def gemfile = "<%= read_and_escape_file gemfile %>"
 writeFile file: 'Gemfile', text: gemfile
@@ -10,7 +12,6 @@ def config = "<%= render_template('buildconf-config.yml', seed: seed, vcs: vcs, 
 writeFile file: 'seed.yml', text: config
 dir('dev') {
     <%= render_template('setup-git-credentials.pipeline', credentials: vcs_credentials[:git]) %>
-
     sh "ruby ../autoproj_install --skip-stage2 --seed-config=../seed.yml --gems-path=${env.JENKINS_HOME}/cache/gems --gemfile=../Gemfile"
     <% if poll %><%= render_template("import-#{vcs.type}.pipeline",
                         poll: poll,
@@ -22,8 +23,8 @@ dir('dev') {
                         package_name: 'autoproj/') %>
     <% else %>if (fileExists('autoproj')) {
         dir('autoproj') { deleteDir() }
-        sh "AUTOPROJ_IGNORE_NONEMPTY_DIR=1 ruby .autoproj/bin/autoproj bootstrap '<%= vcs.type %>' '<%= vcs.url %>' <%= vcs.options.map { |k, v| "'#{k}=#{v}'" }.join(" ") %>"
     }
+    sh "AUTOPROJ_BOOTSTRAP_IGNORE_NONEMPTY_DIR=1 ruby .autoproj/bin/autoproj bootstrap '<%= vcs.type %>' '<%= vcs.url %>' <%= vcs.options.map { |k, v| "'#{k}=#{v}'" }.join(" ") %>"
     <% end %>
     sh ".autoproj/bin/aup autoproj/ --force-reset --auto-exclude"
 }

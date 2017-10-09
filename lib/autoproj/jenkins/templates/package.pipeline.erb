@@ -44,7 +44,7 @@ node(label: 'autoproj-jenkins') {
     def upstreamPackagePrefixes = null
 
     stage('bootstrap') {
-        <%= render_template('bootstrap.pipeline', seed: seed, poll: false, vcs: buildconf_vcs, gemfile: gemfile, autoproj_install_path: autoproj_install_path, vcs_credentials: vcs_credentials, indent: 4) %>
+        <%= render_template('bootstrap.pipeline', seed: seed, poll: false, vcs: buildconf_vcs, gemfile: gemfile, autoproj_install_path: autoproj_install_path, vcs_credentials: vcs_credentials, indent: 8) %>
 
         def jenkins_dependency_overrides = "<%= render_template 'jenkins_dependency_overrides.rb', escape: true, package_name: package_name, upstream_jobs: upstream_jobs %>"
         writeFile file: 'dev/autoproj/overrides.d/99_jenkins_dependency_overrides.rb',
@@ -73,7 +73,7 @@ node(label: 'autoproj-jenkins') {
                                 vcs: vcs,
                                 credentials: vcs_credentials.for(vcs),
                                 package_name: package_name,
-                                indent: 8) %>
+                                indent: 12) %>
             sh "${autoproj} test disable '<%= package_name %>'"
             sh "${autoproj} osdeps '<%= package_name %>' 'pkg-config'"
         }
@@ -96,8 +96,7 @@ node(label: 'autoproj-jenkins') {
         handleDownstream(autoproj, fullWorkspaceDir,
             jobName, jobPackagePrefix, "<%= artifact_glob %>")
         if (! triggeredByUpstream) {
-            <% downstream_jobs.each_key do |job_name| %>
-            build job: "<%= job_name %>", wait: false
+            <% downstream_jobs.each_key do |job_name| %>build job: "<%= job_name %>", wait: false
             <% end %>
         }
     }
