@@ -1,4 +1,5 @@
 import java.nio.file.Paths
+import groovy.json.JsonSlurper
 
 def jobName = "<%= job_name %>"
 def jobPackageName = "<%= package_name %>"
@@ -96,7 +97,8 @@ node(label: 'autoproj-jenkins') {
         handleDownstream(autoproj, fullWorkspaceDir,
             jobName, jobPackagePrefix, "<%= artifact_glob %>")
         if (! triggeredByUpstream) {
-            let downstream_jobs = [<%= downstream_jobs.keys.map { |job_name| "'#{job_name}'" }.join(", ")]
+            def json = '[<%= downstream_jobs.keys.map { |job_name| "\"#{job_name}\"" }.join(", ") %>]'
+            def downstream_jobs = readDownstreamJobs(json)
             triggerDownstreamJobs(downstream_jobs)
         }
     }

@@ -208,6 +208,11 @@ def handleDownstream(autoproj, fullWorkspaceDir,
     return null
 }
 
+@NonCPS
+def readDownstreamJobs(json) {
+    def slurper = new JsonSlurper()
+    return slurper.parseText(json)
+}
 
 def triggerDownstreamJobs(jobNames) {
     for (jobIndex = 0; jobIndex < jobNames.size(); ++jobIndex)
