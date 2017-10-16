@@ -18,10 +18,10 @@ node(label: 'autoproj-jenkins') {
         }
 
         def jobNames = []
+        def arg_job_prefix = "<%= " '--job-prefix=#{job_prefix}'" if !job_prefix.empty? %>"
 
-        stage('update package jobs and trigger them') {
+        stage('update package jobs') {
             def arg_dev      = "<%= " --dev" if dev %>"
-            def arg_job_prefix = "<%= " '--job-prefix=#{job_prefix}'" if !job_prefix.empty? %>"
             <% if vcs_credentials.empty?  %>
             def arg_vcs_credentials = ""
             <% else %>
@@ -44,6 +44,22 @@ node(label: 'autoproj-jenkins') {
                 script: "${autoproj} jenkins update${arg_dev}${arg_job_prefix} --seed=../user_seed.yml 'http://localhost:8080' ${arg_packages}${arg_vcs_credentials}",
                 returnStdout: true).split("\n")
             <% end %>
+        }
+
+        stage('update status job') {
+            def arg_jobs = jobNames.join("'  '")
+            <% if credentials_id %>
+            withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: '<%= credentials_id %>',
+                              usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
+                def credentials = " --username '${env.USERNAME}' --password '${env.PASSWORD}'"
+                sh(script: "${autoproj} jenkins update-status${arg_job_prefix} '${env.JENKINS_URL}' '${arg_jobs}'${credentials}")
+            }
+            <% else %>
+            sh(script: "${autoproj} jenkins update-status${arg_job_prefix} '${env.JENKINS_URL}' '${arg_jobs}'")
+            <% end %>
+        }
+
+        stage('trigger downstream jobs') {
             triggerDownstreamJobs(jobNames)
         }
     }

@@ -1,3 +1,5 @@
+import groovy.json.JsonOutput
+
 @NonCPS
 def isUpstreamOK(jobName, buildId)
 {
@@ -131,11 +133,11 @@ def waitForUpstreamBuilds(upstreamBuilds)
             else if (status == 'FAILED')
             {
                 echo "${upstreamJobName}#${upstreamBuildId} did not finish successfully, aborting this build"
-                return false
+                return upstreamJobName
             }
         }
     }
-    return true
+    return false
 }
 
 def makeUpstreamArtifactImporters(autoproj, fullWorkspaceDir, upstreamDir,
@@ -189,6 +191,23 @@ def installUpstreamArtifacts(autoproj, fullWorkspaceDir,
     return null
 }
 
+def copyJobStatus(targetDir, jobName)
+{
+    dir(targetDir) { deleteDir() }
+
+    dir(targetDir) {
+        step ([$class: 'CopyArtifact',
+            projectName: jobName,
+            filter: "**/*.log",
+            flatten: true,
+            selector: [$class: 'LastCompletedBuildSelector']])
+        step ([$class: 'CopyArtifact',
+            projectName: jobName,
+            filter: "status.json",
+            selector: [$class: 'LastCompletedBuildSelector']])
+    }
+}
+
 def handleDownstream(autoproj, fullWorkspaceDir,
         jobName, jobPackagePrefix, artifactGlob)
 {
@@ -209,9 +228,19 @@ def handleDownstream(autoproj, fullWorkspaceDir,
 }
 
 @NonCPS
-def readDownstreamJobs(json) {
-    def slurper = new JsonSlurper()
-    return slurper.parseText(json)
+def writeAndArchiveStatus(packageName, buildStatus, failedUpstreamName) {
+    def jsonStatus = [
+        name: packageName,
+        status: buildStatus
+    ]
+    if (failedUpstreamName) {
+        jsonStatus['failed_upstream'] = failedUpstreamName
+    }
+
+    // I've tried writeJSON ... but could not figure out which argument it expects
+    jsonStatus = JsonOutput.toJson(jsonStatus)
+    writeFile(file: 'status.json', text: jsonStatus)
+    archiveArtifacts 'status.json'
 }
 
 def triggerDownstreamJobs(jobNames) {

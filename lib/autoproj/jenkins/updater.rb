@@ -38,8 +38,6 @@ module Autoproj::Jenkins
 
         # Update the buildconf pipeline
         #
-        # @param [String] jenkins_url the URL of the jenkins server from the
-        #   point of view of the job's execution
         # @param [String] gemfile the gemfile template that should be used for
         #   the autoproj bootstrap. Mostly used for autoproj-jenkins development
         #   within VMs
@@ -69,6 +67,16 @@ module Autoproj::Jenkins
                 dev: dev)
         end
 
+        # Update the status pipeline
+        #
+        # @param [Array<String>] package_names the list of
+        #   packages we're building
+        def render_status_pipeline(*job_names)
+            job_name = job_name_from_package_name("status")
+            server.render_pipeline(job_name, 'status.pipeline',
+                job_names: job_names)
+        end
+
         # Create or update the buildconf (master) job
         #
         # @param [Array<Autoproj::PackageDefinition>] packages if non-empty,
@@ -80,7 +88,6 @@ module Autoproj::Jenkins
         #   Mostly used within autoproj-jenkins tests
         def create_or_update_buildconf_job(*package_names, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil, seed: nil, dev: false, quiet_period: 5, credentials_id: nil, vcs_credentials: Credentials.new)
             job_name = job_name_from_package_name("buildconf")
-
             pipeline = render_buildconf_pipeline(
                 *package_names,
                 gemfile: gemfile,
@@ -142,6 +149,12 @@ module Autoproj::Jenkins
             result
         end
 
+        def create_or_update_status_job(*job_names, quiet_period: 0)
+            job_name = job_name_from_package_name("status")
+            pipeline = render_status_pipeline(*job_names)
+            server.create_or_reset_job(job_name, 'status.xml', pipeline: pipeline, quiet_period: quiet_period)
+        end
+
         # Create jobs and dependencies to handle the given set of packages
         #
         # @return [Array<String>] the list of names of the jobs that have been
@@ -156,8 +169,10 @@ module Autoproj::Jenkins
                     raise UnhandledVCS, "the #{package.vcs.type} importer, used by #{package.name}, is not supported by autoproj-jenkins"
                 end
 
-                upstream_jobs   = compute_job_to_package_map(compute_upstream_packages(package), package_names)
-                downstream_jobs = compute_job_to_package_map(compute_downstream_packages(package, reverse_dependencies), package_names)
+                upstream_jobs   = compute_job_to_package_map(
+                    compute_upstream_packages(package), package_names)
+                downstream_jobs = compute_job_to_package_map(
+                    compute_downstream_packages(package, reverse_dependencies), package_names)
 
                 prefix_relative_path =
                     if package.autobuild.srcdir == package.autobuild.prefix
@@ -175,6 +190,7 @@ module Autoproj::Jenkins
                     package_dir: Pathname.new(package.autobuild.srcdir).relative_path_from(Pathname.new(ws.root_dir)).to_s,
                     artifact_glob: "**/*",
                     job_name: job_name,
+                    status_job_name: job_name_from_package_name('status'),
                     upstream_jobs: upstream_jobs,
                     downstream_jobs: downstream_jobs,
                     gemfile: gemfile,

@@ -2,6 +2,7 @@ import java.nio.file.Paths
 import groovy.json.JsonSlurper
 
 def jobName = "<%= job_name %>"
+def statusJobName = "<%= status_job_name %>"
 def jobPackageName = "<%= package_name %>"
 def upstreamJobNames = [<%= upstream_jobs.each_key.map { |job_name| "'#{job_name}'" }.join(", ") %>]
 def upstreamPackageNames = [<%= upstream_jobs.each_value.map { |package_name| "'#{package_name}'" }.join(", ") %>]
@@ -25,7 +26,9 @@ stage('waiting for upstream jobs to finish') {
         currentBuild.result = 'NOT_BUILT';
         return;
     }
-    if (!waitForUpstreamBuilds(upstreamBuilds)) {
+    def failedBuild = waitForUpstreamBuilds(upstreamBuilds)
+    if (failedBuild) {
+        writeAndArchiveStatus(jobPackageName, 'UPSTREAM_FAILED', failedBuild)
         currentBuild.result = 'NOT_BUILT';
         return
     }
@@ -45,7 +48,14 @@ node(label: 'autoproj-jenkins') {
     def upstreamPackagePrefixes = null
 
     stage('bootstrap') {
-        <%= render_template('bootstrap.pipeline', seed: seed, poll: false, vcs: buildconf_vcs, gemfile: gemfile, autoproj_install_path: autoproj_install_path, vcs_credentials: vcs_credentials, indent: 8) %>
+        try  {
+            <%= render_template('bootstrap.pipeline', seed: seed, poll: false, vcs: buildconf_vcs, gemfile: gemfile, autoproj_install_path: autoproj_install_path, vcs_credentials: vcs_credentials, indent: 12) %>
+        }
+        catch(err) {
+            writeAndArchiveStatus(jobPackageName, 'BOOTSTRAP_FAILED', null)
+            throw(err)
+        }
+            
 
         def jenkins_dependency_overrides = "<%= render_template 'jenkins_dependency_overrides.rb', escape: true, package_name: package_name, upstream_jobs: upstream_jobs %>"
         writeFile file: 'dev/autoproj/overrides.d/99_jenkins_dependency_overrides.rb',
@@ -84,6 +94,7 @@ node(label: 'autoproj-jenkins') {
                 sh "${autoproj} build --force --deps=f '<%= package_name %>' -p1"
             }
             catch(err) {
+                writeAndArchiveStatus(jobPackageName, 'BUILD_FAILED', null)
                 archive includes: 'install/<%= package_name %>/log/<%= package_name %>-*.log'
                 archive includes: 'install/log/autoproj-osdeps.log'
                 throw(err)
@@ -96,6 +107,7 @@ node(label: 'autoproj-jenkins') {
     stage('handle downstream') {
         handleDownstream(autoproj, fullWorkspaceDir,
             jobName, jobPackagePrefix, "<%= artifact_glob %>")
+        build job: statusJobName, wait: false
         if (! triggeredByUpstream) {
             def json = '[<%= downstream_jobs.keys.map { |job_name| "\"#{job_name}\"" }.join(", ") %>]'
             def downstream_jobs = readDownstreamJobs(json)
@@ -103,11 +115,11 @@ node(label: 'autoproj-jenkins') {
         }
     }
 
+    def autoproj_test_failed = false
     stage('tests') {
         def test_timestamp_path = "${fullWorkspaceDir}/test-timestamp"
         touch file: test_timestamp_path
         def test_output_path    = "${fullWorkspaceDir}/test"
-        def autoproj_test_failed = false
         dir('dev')
         {
             try {
@@ -119,21 +131,32 @@ node(label: 'autoproj-jenkins') {
             catch(err) { autoproj_test_failed = true }
 
             try { sh "${autoproj} jenkins postprocess-tests --after=${test_timestamp_path} ${test_output_path} '<%= package_name %>'" }
-            catch(err) { autoproj_test_failed = true }
+            catch(err) { autoproj_test_failed = err }
         }
         try { junit allowEmptyResults: true, keepLongStdio: true, testResults: "test/*.xml" }
-        catch(err) { autoproj_test_failed = true }
+        catch(err) { autoproj_test_failed = err }
 
-        if (autoproj_test_failed)
-        {
+        if (autoproj_test_failed) {
             currentBuild.result = 'UNSTABLE'
         }
     }
 
-    // Move the current package prefix to a separate folder, to ensure that
-    // other workspaces don't have access to it. It's not strictly required,
-    // but is a good sanity check
-    dir('lastPrefix') { deleteDir() }
-    sh "mv '${jobPackagePrefix}' lastPrefix"
+    stage('wrap-up') {
+        archiveArtifacts 'install/<%= package_name %>/log/<%= package_name %>-*.log'
+        archiveArtifacts 'install/log/autoproj-osdeps.log'
+        if (autoproj_test_failed) {
+            writeAndArchiveStatus(jobPackageName, 'TEST_FAILED', null)
+        }
+        else {
+            writeAndArchiveStatus(jobPackageName, 'SUCCESS', null)
+        }
+        archiveArtifacts 'status.json'
+
+        // Move the current package prefix to a separate folder, to ensure that
+        // other workspaces don't have access to it. It's not strictly required,
+        // but is a good sanity check
+        dir('lastPrefix') { deleteDir() }
+        sh "mv '${jobPackagePrefix}' lastPrefix"
+    }
 }
 

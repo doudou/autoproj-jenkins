@@ -44,6 +44,10 @@ module Autoproj
                                                        vcs_credentials: parse_vcs_credentials(vcs_credentials))
             end
 
+            def create_or_update_status_job(*job_names)
+                updater.create_or_update_status_job(*job_names)
+            end
+
             def add_or_update_packages(*package_names, seed: nil, dev: false, vcs_credentials: [])
                 initialize_and_load
                 source_packages, _ = finalize_setup(package_names, non_imported_packages: :ignore, auto_exclude: true)

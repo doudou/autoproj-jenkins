@@ -1,0 +1,63 @@
+<%= render_template('library.pipeline') %>
+
+node(label: 'autoproj-jenkins') {
+    def fullWorkspaceDir = pwd()
+    def resultPath = "${fullWorkspaceDir}/result"
+    def targetPath = "${fullWorkspaceDir}/all"
+
+    stage('update') {
+        def jobNames = '[<%= job_names.map { |name| "\"#{name}\"" }.join(", ") %>]'
+        jobNames = readJSON text: jobNames
+
+        dir(resultPath) { deleteDir() }
+        dir(resultPath) {}
+
+        dir(targetPath) { deleteDir() }
+        dir(targetPath) {}
+
+        def status = [:]
+
+        for (jobIndex = 0; jobIndex < jobNames.size(); jobIndex += 1) {
+            def jobName       = jobNames[jobIndex]
+            def jobStatusDir  = "${fullWorkspaceDir}/per-package/${jobName}"
+            def jobStatusPath = "${jobStatusDir}/status.json"
+
+            copyJobStatus(jobStatusDir, jobName)
+
+            if (fileExists(jobStatusPath)) {
+                def jobStatus = readJSON file: jobStatusPath
+                def packageName = jobStatus['name']
+                def packageBasename   = packageName.tokenize('/')[-1]
+                def logfilePrefixLength = packageBasename.size() + 1
+
+                def finalLogfileNames = [:]
+                dir(jobStatusDir) {
+                    def logFiles  = findFiles glob: "*.log"
+                    for (logFileIndex = 0; logFileIndex < logFiles.size(); logFileIndex += 1) {
+                        def logFilePath = logFiles[logFileIndex].path
+                        def logFileBasename = logFiles[logFileIndex].name.substring(logfilePrefixLength)
+
+                        def contents = readFile logFilePath
+                        writeFile file: "${targetPath}/${jobName}-${logFileBasename}", text: contents
+                        finalLogfileNames[logFileBasename.toString()] = "${jobName}-${logFileBasename}".toString()
+                    }
+                }
+                jobStatus['logfiles'] = finalLogfileNames
+                status[jobName] = jobStatus
+            }
+            else {
+                echo "no status for ${jobName}"
+                currentBuild.result = 'UNSTABLE'
+            }
+        }
+
+        json = JsonOutput.toJson(status)
+        writeFile(file: "${targetPath}/status.json", text: json)
+        dir(targetPath) {
+            zip zipFile: "${resultPath}/status.zip", glob: '*'
+        }
+        dir(resultPath) {
+            archiveArtifacts 'status.zip'
+        }
+    }
+}

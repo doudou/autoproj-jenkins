@@ -80,6 +80,13 @@ module Autoproj
                 end
             end
 
+            desc 'update-status URL JOB_NAMES', 'create or update the status build'
+            def update_status(url, *job_names)
+                require 'autoproj/cli/jenkins'
+                ops = create_ops(url, target_os: options[:target_os])
+                ops.create_or_update_status_job(*job_names)
+            end
+
 
             desc 'update URL [PACKAGE_NAMES]', 'add the following package and its dependencies to the jenkins build'
             option :dev, desc: 'assume that the jenkins instance is a development instance and that the various gems are checked out in /opt/. See the README for more details.',
