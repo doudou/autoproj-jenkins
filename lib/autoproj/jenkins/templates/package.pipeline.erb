@@ -94,12 +94,12 @@ node(label: 'autoproj-jenkins') {
             }
             catch(err) {
                 writeAndArchiveStatus(jobPackageName, 'BUILD_FAILED', null)
-                archive includes: 'install/<%= package_name %>/log/<%= package_name %>-*.log'
-                archive includes: 'install/log/autoproj-osdeps.log'
+                archiveArtifacts allowEmptyArchive: true, artifacts: 'install/<%= package_name %>/log/<%= package_name %>-*.log'
+                archiveArtifacts allowEmptyArchive: true, artifacts: 'install/log/autoproj-osdeps.log'
                 throw(err)
             }
-            archive includes: 'install/<%= package_name %>/log/<%= package_name %>-*.log'
-            archive includes: 'install/log/autoproj-osdeps.log'
+            archiveArtifacts allowEmptyArchive: true, artifacts: 'install/<%= package_name %>/log/<%= package_name %>-*.log'
+            archiveArtifacts allowEmptyArchive: true, artifacts: 'install/log/autoproj-osdeps.log'
         }
     }
 
@@ -141,8 +141,8 @@ node(label: 'autoproj-jenkins') {
     }
 
     stage('wrap-up') {
-        archiveArtifacts 'install/<%= package_name %>/log/<%= package_name %>-*.log'
-        archiveArtifacts 'install/log/autoproj-osdeps.log'
+        archiveArtifacts allowEmptyArchive: true, artifacts: 'install/<%= package_name %>/log/<%= package_name %>-*.log'
+        archiveArtifacts allowEmptyArchive: true, artifacts: 'install/log/autoproj-osdeps.log'
         if (autoproj_test_failed) {
             writeAndArchiveStatus(jobPackageName, 'TEST_FAILED', null)
         }
