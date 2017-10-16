@@ -1,5 +1,4 @@
 import java.nio.file.Paths
-import groovy.json.JsonSlurper
 
 def jobName = "<%= job_name %>"
 def statusJobName = "<%= status_job_name %>"
@@ -110,7 +109,7 @@ node(label: 'autoproj-jenkins') {
         build job: statusJobName, wait: false
         if (! triggeredByUpstream) {
             def json = '[<%= downstream_jobs.keys.map { |job_name| "\"#{job_name}\"" }.join(", ") %>]'
-            def downstream_jobs = readDownstreamJobs(json)
+            def downstream_jobs = readJSON text: json
             triggerDownstreamJobs(downstream_jobs)
         }
     }
