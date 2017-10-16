@@ -158,6 +158,7 @@ def makeUpstreamArtifactImporters(autoproj, fullWorkspaceDir, upstreamDir,
                 step ([$class: 'CopyArtifact',
                     projectName: jobName,
                     filter: "${jobName}-prefix.zip",
+                    fingerpintArtifacts: true,
                     selector: [$class: 'SpecificBuildSelector', buildNumber: buildId.toString()]])
                 dir(jobName) {
                     unzip zipFile: "${fullUpstreamDir}/${jobName}-prefix.zip"
@@ -221,7 +222,7 @@ def handleDownstream(autoproj, fullWorkspaceDir,
         zip zipFile: targetArtifactPath, glob: artifactGlob
     }
     dir(downstreamDir) {
-        archiveArtifacts artifacts: "*.zip"
+        archiveArtifacts artifacts: "*.zip", fingerprint: true
         deleteDir()
     }
     return null
