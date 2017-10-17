@@ -240,7 +240,7 @@ def writeAndArchiveStatus(statusJobName, packageName, buildStatus, failedUpstrea
     // I've tried writeJSON ... but could not figure out which argument it expects
     jsonStatus = JsonOutput.toJson(jsonStatus)
     writeFile(file: 'status.json', text: jsonStatus)
-    archiveArtifacts 'status.json'
+    archiveArtifacts artifacts: 'status.json'
     build job: statusJobName, wait: false
 }
 
