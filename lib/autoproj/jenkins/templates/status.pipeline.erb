@@ -1,6 +1,6 @@
 <%= render_template('library.pipeline') %>
 
-node(label: 'autoproj-jenkins') {
+node(label: 'autoproj-jenkins-bookkeeping') {
     def fullWorkspaceDir = pwd()
     def resultPath = "${fullWorkspaceDir}/result"
     def targetPath = "${fullWorkspaceDir}/all"
