@@ -228,7 +228,6 @@ def handleDownstream(autoproj, fullWorkspaceDir,
     return null
 }
 
-@NonCPS
 def writeAndArchiveStatus(packageName, buildStatus, failedUpstreamName) {
     def jsonStatus = [
         name: packageName,
