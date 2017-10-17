@@ -47,6 +47,11 @@ node(label: 'autoproj-jenkins') {
             }
             else {
                 echo "no status for ${jobName}"
+                status[jobName] = [
+                    name: jobName,
+                    status: 'NEVER_BUILT',
+                    logfiles: []
+                ]
                 currentBuild.result = 'UNSTABLE'
             }
         }
