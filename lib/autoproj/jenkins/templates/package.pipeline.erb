@@ -94,12 +94,10 @@ node(label: 'autoproj-jenkins') {
             }
             catch(err) {
                 writeAndArchiveStatus(jobPackageName, 'BUILD_FAILED', null)
-                archiveArtifacts allowEmptyArchive: true, artifacts: 'install/<%= package_name %>/log/<%= package_name %>-*.log'
-                archiveArtifacts allowEmptyArchive: true, artifacts: 'install/log/autoproj-osdeps.log'
+                archiveBuildLogs('', jobPackageName)
                 throw(err)
             }
-            archiveArtifacts allowEmptyArchive: true, artifacts: 'install/<%= package_name %>/log/<%= package_name %>-*.log'
-            archiveArtifacts allowEmptyArchive: true, artifacts: 'install/log/autoproj-osdeps.log'
+            archiveBuildLogs('', jobPackageName)
         }
     }
 
@@ -141,8 +139,7 @@ node(label: 'autoproj-jenkins') {
     }
 
     stage('wrap-up') {
-        archiveArtifacts allowEmptyArchive: true, artifacts: 'install/<%= package_name %>/log/<%= package_name %>-*.log'
-        archiveArtifacts allowEmptyArchive: true, artifacts: 'install/log/autoproj-osdeps.log'
+        archiveBuildLogs('dev/', jobPackageName)
         if (autoproj_test_failed) {
             writeAndArchiveStatus(jobPackageName, 'TEST_FAILED', null)
         }

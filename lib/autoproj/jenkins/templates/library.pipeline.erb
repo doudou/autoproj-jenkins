@@ -252,3 +252,12 @@ def triggerDownstreamJobs(jobNames) {
     return null
 }
 
+def archiveBuildLogs(prefix, packageName) {
+    dir("${prefix}install/${packageName}/log") {
+        archiveArtifacts allowEmptyArchive: true, artifacts: '${packageName}-*.log'
+    }
+    dir("${prefix}install/log") {
+        archiveArtifacts allowEmptyArchive: true, artifacts: 'autoproj-osdeps.log'
+    }
+}
+
