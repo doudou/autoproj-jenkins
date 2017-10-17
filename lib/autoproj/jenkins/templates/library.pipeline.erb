@@ -242,6 +242,7 @@ def writeAndArchiveStatus(packageName, buildStatus, failedUpstreamName) {
     jsonStatus = JsonOutput.toJson(jsonStatus)
     writeFile(file: 'status.json', text: jsonStatus)
     archiveArtifacts 'status.json'
+    build job: statusJobName, wait: false
 }
 
 def triggerDownstreamJobs(jobNames) {

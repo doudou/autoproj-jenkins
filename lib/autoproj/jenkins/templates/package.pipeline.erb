@@ -27,8 +27,8 @@ stage('waiting for upstream jobs to finish') {
     }
     def failedBuild = waitForUpstreamBuilds(upstreamBuilds)
     if (failedBuild) {
-        writeAndArchiveStatus(jobPackageName, 'UPSTREAM_FAILED', failedBuild)
         currentBuild.result = 'NOT_BUILT';
+        writeAndArchiveStatus(statusJobName, jobPackageName, 'UPSTREAM_FAILED', failedBuild)
         return
     }
 }
@@ -51,7 +51,7 @@ node(label: 'autoproj-jenkins') {
             <%= render_template('bootstrap.pipeline', seed: seed, poll: false, vcs: buildconf_vcs, gemfile: gemfile, autoproj_install_path: autoproj_install_path, vcs_credentials: vcs_credentials, indent: 12) %>
         }
         catch(err) {
-            writeAndArchiveStatus(jobPackageName, 'BOOTSTRAP_FAILED', null)
+            writeAndArchiveStatus(statusJobName, jobPackageName, 'BOOTSTRAP_FAILED', null)
             throw(err)
         }
             
@@ -73,38 +73,37 @@ node(label: 'autoproj-jenkins') {
             upstreamJobNames, upstreamPackagePrefixes, upstreamBuilds)
     }
 
-    dir('dev') {
-        stage('prepare build') {
-            <%= render_template("import-#{vcs.type}.pipeline",
-                                poll: true,
-                                patch: true,
-                                allow_unused: true,
-                                package_dir: package_dir,
-                                vcs: vcs,
-                                credentials: vcs_credentials.for(vcs),
-                                package_name: package_name,
-                                indent: 12) %>
-            sh "${autoproj} test disable '<%= package_name %>'"
-            sh "${autoproj} osdeps '<%= package_name %>' 'pkg-config'"
-        }
+    try {
+        dir('dev') {
+            stage('prepare build') {
+                <%= render_template("import-#{vcs.type}.pipeline",
+                                    poll: true,
+                                    patch: true,
+                                    allow_unused: true,
+                                    package_dir: package_dir,
+                                    vcs: vcs,
+                                    credentials: vcs_credentials.for(vcs),
+                                    package_name: package_name,
+                                    indent: 12) %>
+                sh "${autoproj} test disable '<%= package_name %>'"
+                sh "${autoproj} osdeps '<%= package_name %>' 'pkg-config'"
+            }
 
-        stage('build') {
-            try {
-                sh "${autoproj} build --force --deps=f '<%= package_name %>' -p1"
-            }
-            catch(err) {
-                writeAndArchiveStatus(jobPackageName, 'BUILD_FAILED', null)
+            stage('build') {
+                    sh "${autoproj} build --force --deps=f '<%= package_name %>' -p1"
+                }
                 archiveBuildLogs('', jobPackageName)
-                throw(err)
             }
-            archiveBuildLogs('', jobPackageName)
-        }
+    }
+    catch(err) {
+        archiveBuildLogs('', jobPackageName)
+        writeAndArchiveStatus(statusJobName, jobPackageName, 'BUILD_FAILED', null)
+        throw(err)
     }
 
     stage('handle downstream') {
         handleDownstream(autoproj, fullWorkspaceDir,
             jobName, jobPackagePrefix, "<%= artifact_glob %>")
-        build job: statusJobName, wait: false
         if (! triggeredByUpstream) {
             def json = '[<%= downstream_jobs.keys.map { |job_name| "\"#{job_name}\"" }.join(", ") %>]'
             def downstream_jobs = readJSON text: json
@@ -141,10 +140,10 @@ node(label: 'autoproj-jenkins') {
     stage('wrap-up') {
         archiveBuildLogs('dev/', jobPackageName)
         if (autoproj_test_failed) {
-            writeAndArchiveStatus(jobPackageName, 'TEST_FAILED', null)
+            writeAndArchiveStatus(statusJobName, jobPackageName, 'TEST_FAILED', null)
         }
         else {
-            writeAndArchiveStatus(jobPackageName, 'SUCCESS', null)
+            writeAndArchiveStatus(statusJobName, jobPackageName, 'SUCCESS', null)
         }
         archiveArtifacts 'status.json'
 
