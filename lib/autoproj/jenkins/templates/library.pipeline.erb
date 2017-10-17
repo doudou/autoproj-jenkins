@@ -228,7 +228,7 @@ def handleDownstream(autoproj, fullWorkspaceDir,
     return null
 }
 
-def writeAndArchiveStatus(packageName, buildStatus, failedUpstreamName) {
+def writeAndArchiveStatus(statusJobName, packageName, buildStatus, failedUpstreamName) {
     def jsonStatus = [
         name: packageName,
         status: buildStatus
