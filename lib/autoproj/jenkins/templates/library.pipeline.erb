@@ -201,6 +201,7 @@ def copyJobStatus(targetDir, jobName)
             projectName: jobName,
             filter: "**/*.log",
             flatten: true,
+            optional: true,
             selector: [$class: 'LastCompletedBuildSelector']])
         step ([$class: 'CopyArtifact',
             projectName: jobName,
