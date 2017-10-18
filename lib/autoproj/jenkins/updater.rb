@@ -48,7 +48,7 @@ module Autoproj::Jenkins
         #   with --dev or not
         # @param [Array<Autoproj::PackageDefinition>] packages if non-empty,
         #   restrict operations to these packages and their dependencies
-        def render_buildconf_pipeline(*package_names, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil, dev: false, credentials_id: nil, vcs_credentials: Credentials.new, seed: nil)
+        def render_buildconf_pipeline(*package_names, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil, dev: false, credentials_id: nil, vcs_credentials: Credentials.new, seed: nil, status_publisher: nil)
             manifest_vcs = ws.manifest.vcs
             if manifest_vcs.local? || manifest_vcs.none?
                 raise ArgumentError, "cannot use Jenkins to build an autoproj buildconf that is not on a remotely acessible VCS"
@@ -64,17 +64,18 @@ module Autoproj::Jenkins
                 credentials_id: credentials_id,
                 seed: seed,
                 vcs_credentials: vcs_credentials,
-                dev: dev)
+                dev: dev,
+                status_publisher: status_publisher)
         end
 
         # Update the status pipeline
         #
         # @param [Array<String>] package_names the list of
         #   packages we're building
-        def render_status_pipeline(*job_names)
+        def render_status_pipeline(*job_names, publisher: nil)
             job_name = job_name_from_package_name("status")
             server.render_pipeline(job_name, 'status.pipeline',
-                job_names: job_names)
+                job_names: job_names, publisher: publisher)
         end
 
         # Create or update the buildconf (master) job
@@ -86,7 +87,7 @@ module Autoproj::Jenkins
         #   within VMs
         # @param [Integer] quiet_period the job's quiet period, in seconds.
         #   Mostly used within autoproj-jenkins tests
-        def create_or_update_buildconf_job(*package_names, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil, seed: nil, dev: false, quiet_period: 5, credentials_id: nil, vcs_credentials: Credentials.new)
+        def create_or_update_buildconf_job(*package_names, gemfile: 'buildconf-Gemfile', autoproj_install_path: nil, seed: nil, dev: false, quiet_period: 5, credentials_id: nil, vcs_credentials: Credentials.new, status_publisher: nil)
             job_name = job_name_from_package_name("buildconf")
             pipeline = render_buildconf_pipeline(
                 *package_names,
@@ -95,8 +96,10 @@ module Autoproj::Jenkins
                 credentials_id: credentials_id,
                 vcs_credentials: vcs_credentials,
                 seed: seed,
-                dev: dev)
-            server.create_or_reset_job(job_name, 'buildconf.xml', pipeline: pipeline, quiet_period: quiet_period)
+                dev: dev,
+                status_publisher: status_publisher)
+            server.create_or_reset_job(
+                job_name, 'buildconf.xml', pipeline: pipeline, quiet_period: quiet_period)
         end
 
         # Returns the job name of a given package
@@ -149,10 +152,12 @@ module Autoproj::Jenkins
             result
         end
 
-        def create_or_update_status_job(*job_names, quiet_period: 0)
+        def create_or_update_status_job(*job_names, quiet_period: 0, publisher: nil)
             job_name = job_name_from_package_name("status")
-            pipeline = render_status_pipeline(*job_names)
-            server.create_or_reset_job(job_name, 'status.xml', pipeline: pipeline, quiet_period: quiet_period)
+            pipeline = render_status_pipeline(*job_names, publisher: publisher)
+            server.create_or_reset_job(
+                job_name, 'status.xml',
+                pipeline: pipeline, quiet_period: quiet_period)
         end
 
         # Create jobs and dependencies to handle the given set of packages

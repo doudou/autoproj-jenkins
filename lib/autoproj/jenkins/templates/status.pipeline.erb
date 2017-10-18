@@ -68,5 +68,9 @@ node(label: 'autoproj-jenkins-bookkeeping') {
         dir(resultPath) {
             archiveArtifacts 'status.zip'
         }
+
+        <% if publisher %>
+        build "<%= publisher %>", wait: false
+        <% end %>
     }
 }

@@ -48,14 +48,20 @@ node(label: 'autoproj-jenkins') {
 
         stage('update status job') {
             def arg_jobs = jobNames.join("'  '")
+            def arg_publisher
+            <% if status_publisher %>
+            def arg_publisher = " '--publisher=<%= status_publisher %>'"
+            <% else %>
+            def arg_publisher
+            <% end %>
             <% if credentials_id %>
             withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: '<%= credentials_id %>',
                               usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
-                def credentials = " --username '${env.USERNAME}' --password '${env.PASSWORD}'"
-                sh(script: "${autoproj} jenkins update-status${arg_job_prefix} '${env.JENKINS_URL}' '${arg_jobs}'${credentials}")
+            def credentials = " --username '${env.USERNAME}' --password '${env.PASSWORD}'"
+            sh(script: "${autoproj} jenkins update-status${arg_job_prefix} '${env.JENKINS_URL}' '${arg_jobs}'${credentials}${arg_publisher}")
             }
             <% else %>
-            sh(script: "${autoproj} jenkins update-status${arg_job_prefix} '${env.JENKINS_URL}' '${arg_jobs}'")
+            sh(script: "${autoproj} jenkins update-status${arg_job_prefix} '${env.JENKINS_URL}' '${arg_jobs}'${arg_publisher}")
             <% end %>
         }
 

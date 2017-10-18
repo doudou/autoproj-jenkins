@@ -22,7 +22,7 @@ module Autoproj
                 results
             end
 
-            def create_or_update_buildconf_job(*package_names, seed: nil, dev: false, credentials_id: nil, vcs_credentials: [])
+            def create_or_update_buildconf_job(*package_names, seed: nil, dev: false, credentials_id: nil, vcs_credentials: [], status_publisher: nil)
                 initialize_and_load
 
                 if dev
@@ -37,15 +37,17 @@ module Autoproj
                 # package sets/metapackages, they need to be provided as-is to
                 # the buildconf template, so that the metapackage gets resolved
                 # each time instead of only at the point 'jenkins init' was done
-                updater.create_or_update_buildconf_job(*package_names, gemfile: gemfile,
-                                                       seed: seed,
-                                                       autoproj_install_path: autoproj_install_path, dev: dev,
-                                                       credentials_id: credentials_id,
-                                                       vcs_credentials: parse_vcs_credentials(vcs_credentials))
+                updater.create_or_update_buildconf_job(
+                    *package_names, gemfile: gemfile,
+                    seed: seed,
+                    autoproj_install_path: autoproj_install_path, dev: dev,
+                    credentials_id: credentials_id,
+                    vcs_credentials: parse_vcs_credentials(vcs_credentials),
+                    status_publisher: status_publisher)
             end
 
-            def create_or_update_status_job(*job_names)
-                updater.create_or_update_status_job(*job_names)
+            def create_or_update_status_job(*job_names, publisher: nil)
+                updater.create_or_update_status_job(*job_names, publisher: publisher)
             end
 
             def add_or_update_packages(*package_names, seed: nil, dev: false, vcs_credentials: [])
