@@ -23,6 +23,7 @@ stage('waiting for upstream jobs to finish') {
     if (upstreamBuilds == null)
     {
         currentBuild.result = 'NOT_BUILT';
+        writeAndArchiveStatus(statusJobName, jobPackageName, 'UPSTREAM_FAILED', null)
         return;
     }
     def failedBuild = waitForUpstreamBuilds(upstreamBuilds)
