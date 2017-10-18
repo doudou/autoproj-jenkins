@@ -70,7 +70,10 @@ node(label: 'autoproj-jenkins-bookkeeping') {
         }
 
         <% if publisher %>
-        build "<%= publisher %>", wait: false
+        build "<%= publisher %>", wait: false, parameters: [
+            string(name: 'AUTOPROJ_JENKINS_STATUS_JOB', value: env.JOB_NAME),
+            string(name: 'AUTOPROJ_JENKINS_STATUS_BUILD_ID', value: currentBuild.id),
+            string(name: 'AUTOPROJ_JENKINS_PROJECT_NAME', value: "<%= project_name %>")
         <% end %>
     }
 }

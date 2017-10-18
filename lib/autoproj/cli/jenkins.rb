@@ -46,8 +46,8 @@ module Autoproj
                     status_publisher: status_publisher)
             end
 
-            def create_or_update_status_job(*job_names, publisher: nil)
-                updater.create_or_update_status_job(*job_names, publisher: publisher)
+            def create_or_update_status_job(*job_names, publisher: nil, project_name: @updater.project_name)
+                updater.create_or_update_status_job(*job_names, publisher: publisher, project_name: project_name)
             end
 
             def add_or_update_packages(*package_names, seed: nil, dev: false, vcs_credentials: [])

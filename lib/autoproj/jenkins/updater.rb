@@ -23,6 +23,13 @@ module Autoproj::Jenkins
         # @return [String]
         attr_reader :job_prefix
 
+        # The string used as project name by default
+        #
+        # If there is a job prefix, it is initialized with the job prefix minus
+        # any trailing non-string character (i.e. rock- becomes rock).
+        # Otherwise, it is 'default'
+        attr_accessor :project_name
+
         # Create a new updater context for an autoproj workspace and Jenkins
         # server
         #
@@ -34,6 +41,11 @@ module Autoproj::Jenkins
             @ws = ws
             @server = server
             @job_prefix = job_prefix
+            if @job_prefix && !@job_prefix.empty?
+                @project_name = @job_prefix.gsub(/[^\w]+$/, '')
+            else
+                @project_name = 'default'
+            end
         end
 
         # Update the buildconf pipeline
@@ -72,10 +84,10 @@ module Autoproj::Jenkins
         #
         # @param [Array<String>] package_names the list of
         #   packages we're building
-        def render_status_pipeline(*job_names, publisher: nil)
+        def render_status_pipeline(*job_names, publisher: nil, project_name: self.project_name)
             job_name = job_name_from_package_name("status")
             server.render_pipeline(job_name, 'status.pipeline',
-                job_names: job_names, publisher: publisher)
+                job_names: job_names, publisher: publisher, project_name: project_name)
         end
 
         # Create or update the buildconf (master) job
