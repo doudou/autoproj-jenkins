@@ -35,7 +35,11 @@ node(label: 'autoproj-jenkins-bookkeeping') {
                     def logFiles  = findFiles glob: "*.log"
                     for (logFileIndex = 0; logFileIndex < logFiles.size(); logFileIndex += 1) {
                         def logFilePath = logFiles[logFileIndex].path
-                        def logFileBasename = logFiles[logFileIndex].name.substring(logfilePrefixLength)
+                        def logFileName = logFiles[logFileIndex].name
+                        def logFileBasename = logFileName
+                        if (logFileName.startsWith(packageBasename + "-")) {
+                            logFileBasename = logFileName.substring(logfilePrefixLength)
+                        }
 
                         def contents = readFile logFilePath
                         writeFile file: "${targetPath}/${jobName}-${logFileBasename}", text: contents
