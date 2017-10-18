@@ -195,7 +195,6 @@ def installUpstreamArtifacts(autoproj, fullWorkspaceDir,
 def copyJobStatus(targetDir, jobName)
 {
     dir(targetDir) { deleteDir() }
-
     dir(targetDir) {
         step ([$class: 'CopyArtifact',
             projectName: jobName,
@@ -205,6 +204,7 @@ def copyJobStatus(targetDir, jobName)
             selector: [$class: 'LastCompletedBuildSelector']])
         step ([$class: 'CopyArtifact',
             projectName: jobName,
+            optional: true,
             filter: "status.json",
             selector: [$class: 'LastCompletedBuildSelector']])
     }
