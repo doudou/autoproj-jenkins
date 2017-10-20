@@ -18,6 +18,8 @@ node(label: 'autoproj-jenkins-bookkeeping') {
         dir(targetPath) {}
 
         for (jobIndex = 0; jobIndex < jobNames.size(); jobIndex += 1) {
+            milestone()
+
             def jobName       = jobNames[jobIndex]
             def jobStatusDir  = "${fullWorkspaceDir}/per-package/${jobName}"
             def jobStatusPath = "${jobStatusDir}/status.json"
