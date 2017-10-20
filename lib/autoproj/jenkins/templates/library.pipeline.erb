@@ -1,4 +1,5 @@
 import groovy.json.JsonOutput
+import java.util.Random
 
 @NonCPS
 def isUpstreamOK(jobName, buildId)
@@ -112,6 +113,9 @@ def getUpstreamBuilds(upstreamJobNames, triggerJob, triggerBuild)
 
 def waitForUpstreamBuilds(upstreamBuilds)
 {
+    def sleepDuration = 30
+    def sleepRandom = new Random()
+
     // Iterate list -- NOTE: we cannot use groovy style or even modern java style iteration
     for (upstreamBuildIndex = 0; upstreamBuildIndex < upstreamBuilds.size(); ++upstreamBuildIndex)
     {
@@ -128,7 +132,7 @@ def waitForUpstreamBuilds(upstreamBuilds)
             else if (status == 'IN_PROGRESS')
             {
                 echo "waiting for job ${upstreamJobName}#${upstreamBuildId} to finish"
-                sleep 10
+                sleep(sleepDuration + sleepRandom.nextFloat() * sleepDuration)
             }
             else if (status == 'FAILED')
             {
