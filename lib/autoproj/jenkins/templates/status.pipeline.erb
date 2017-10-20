@@ -5,7 +5,9 @@ node(label: 'autoproj-jenkins-bookkeeping') {
     def resultPath = "${fullWorkspaceDir}/result"
     def targetPath = "${fullWorkspaceDir}/all"
 
-    stage('update') {
+    def status = [:]
+
+    stage('aggregate job status') {
         def jobNames = '[<%= job_names.map { |name| "\"#{name}\"" }.join(", ") %>]'
         jobNames = readJSON text: jobNames
 
@@ -14,8 +16,6 @@ node(label: 'autoproj-jenkins-bookkeeping') {
 
         dir(targetPath) { deleteDir() }
         dir(targetPath) {}
-
-        def status = [:]
 
         for (jobIndex = 0; jobIndex < jobNames.size(); jobIndex += 1) {
             def jobName       = jobNames[jobIndex]
@@ -59,7 +59,9 @@ node(label: 'autoproj-jenkins-bookkeeping') {
                 currentBuild.result = 'UNSTABLE'
             }
         }
+    }
 
+    stage('archive result') {
         json = JsonOutput.toJson(status)
         writeFile(file: "${targetPath}/status.json", text: json)
         dir(targetPath) {
@@ -68,12 +70,15 @@ node(label: 'autoproj-jenkins-bookkeeping') {
         dir(resultPath) {
             archiveArtifacts 'status.zip'
         }
+    }
 
-        <% if publisher %>
-        build "<%= publisher %>", wait: false, parameters: [
+    <% if publisher %>
+    stage('trigger publishing job') {
+        build job: "<%= publisher %>", wait: false, parameters: [
             string(name: 'AUTOPROJ_JENKINS_STATUS_JOB', value: env.JOB_NAME),
             string(name: 'AUTOPROJ_JENKINS_STATUS_BUILD_ID', value: currentBuild.id),
-            string(name: 'AUTOPROJ_JENKINS_PROJECT_NAME', value: "<%= project_name %>")
-        <% end %>
+            string(name: 'AUTOPROJ_JENKINS_PROJECT_NAME', value: "<%= project_name %>")]
     }
+    <% else project_name # make the variable access check happy %>
+    <% end %>
 }
