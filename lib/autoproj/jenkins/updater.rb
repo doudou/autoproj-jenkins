@@ -164,9 +164,9 @@ module Autoproj::Jenkins
             result
         end
 
-        def create_or_update_status_job(*job_names, quiet_period: 0, publisher: nil)
+        def create_or_update_status_job(*job_names, quiet_period: 0, publisher: nil, project_name: self.project_name)
             job_name = job_name_from_package_name("status")
-            pipeline = render_status_pipeline(*job_names, publisher: publisher)
+            pipeline = render_status_pipeline(*job_names, publisher: publisher, project_name: project_name)
             server.create_or_reset_job(
                 job_name, 'status.xml',
                 pipeline: pipeline, quiet_period: quiet_period)
